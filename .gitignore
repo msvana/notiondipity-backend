@@ -1,0 +1,4 @@
+.idea/
+.env
+embs.pickle
+**/__pycache__/

@@ -1,0 +1,24 @@
+[tool.poetry]
+name = "notion-backend"
+version = "0.1.0"
+description = ""
+authors = ["Milos Svana <milos.svana@gmail.com>"]
+readme = "README.md"
+packages = [{include = "notiondipity_backend"}]
+
+[tool.poetry.dependencies]
+python = "~3.10"
+requests = "^2.28.2"
+openai = "^0.27.2"
+numpy = "^1.24.2"
+flask = "^2.2.3"
+flask-cors = "^3.0.10"
+psycopg2-binary = "^2.9.6"
+peewee = "^3.16.0"
+
+[tool.poetry.scripts]
+update_embeddings = 'notiondipity_backend.scripts:update_embeddings'
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
