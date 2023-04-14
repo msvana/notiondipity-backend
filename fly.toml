@@ -1,0 +1,31 @@
+# fly.toml file generated for notiondipity-backend on 2023-04-14T11:27:13+02:00
+
+app = "notiondipity-backend"
+kill_signal = "SIGINT"
+kill_timeout = 5
+mounts = []
+primary_region = "ams"
+processes = []
+
+[[services]]
+  internal_port = 5000
+  processes = ["app"]
+  protocol = "tcp"
+  [services.concurrency]
+    hard_limit = 25
+    soft_limit = 20
+    type = "connections"
+
+  [[services.ports]]
+    force_https = true
+    handlers = ["http"]
+    port = 80
+
+  [[services.ports]]
+    handlers = ["tls", "http"]
+    port = 443
+
+[env]
+  PG_HOST="notiondipity-postgres.internal"
+  PG_PORT="5432"
+  PG_USER="postgres"

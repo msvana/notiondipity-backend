@@ -46,7 +46,7 @@ def update_embeddings():
             page['id'], page['url'], embedding, page_last_updated, datetime.datetime.now())
         embeddings.add_embedding_record(cursor, page_embedding_record)
 
-        if (i + 1) % 10:
+        if (i + 1) % 10 == 0:
             conn.commit()
 
     conn.commit()
