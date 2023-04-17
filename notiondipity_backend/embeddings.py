@@ -48,6 +48,10 @@ def get_all_embedding_records(cursor: psycopg2.extensions.cursor) -> list[PageEm
     return page_embeddings_records
 
 
+def delete_embedding_record(cursor: psycopg2.extensions.cursor, page_id: str):
+    cursor.execute('DELETE FROM embeddings WHERE page_id = %s', (page_id,))
+
+
 def get_embedding(text: str):
     response = openai.Embedding.create(
         input=text,

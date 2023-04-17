@@ -1,10 +1,5 @@
 import datetime
 import logging
-import pickle
-import sys
-
-import numpy as np
-import openai
 
 from notiondipity_backend import embeddings
 from notiondipity_backend import notion
@@ -24,11 +19,17 @@ def update_embeddings():
     for i, page in enumerate(all_pages):
         logging.info(f'Processing page {i + 1}/{num_pages}')
         logging.info(f'Attempting to load page from the database')
+        page_last_updated = datetime.datetime.fromisoformat(page['last_edited_time'][:-1])
         page_embedding_record = embeddings.get_embedding_record(cursor, page['id'])
 
         if page_embedding_record:
-            logging.info('Page already exists in the database, skipping')
-            continue
+            if page_last_updated < page_embedding_record.embedding_last_updated:
+                logging.info('Page embedding already up to date, skipping')
+                continue
+            else:
+                logging.info('Removing old embedding to create an updated one')
+                embeddings.delete_embedding_record(cursor, page_embedding_record.page_id)
+                conn.commit()
 
         title = page['properties']['title']['title'][0]['plain_text'] if 'title' in page['properties'] else None
         if not title:
@@ -41,7 +42,6 @@ def update_embeddings():
         full_text = f'{title}\n{page_text}'
         logging.info('Asking OpenAI for an embedding')
         embedding = embeddings.get_embedding(full_text)
-        page_last_updated = datetime.datetime.fromisoformat(page['last_edited_time'][:-1])
         page_embedding_record = embeddings.PageEmbeddingRecord(
             page['id'], page['url'], embedding, page_last_updated, datetime.datetime.now())
         embeddings.add_embedding_record(cursor, page_embedding_record)
