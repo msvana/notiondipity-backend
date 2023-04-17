@@ -52,6 +52,13 @@ def delete_embedding_record(cursor: psycopg2.extensions.cursor, page_id: str):
     cursor.execute('DELETE FROM embeddings WHERE page_id = %s', (page_id,))
 
 
+def delete_removed_records(cursor: psycopg2.extensions.cursor, existing_page_ids: list[str]) -> int:
+    page_ids_concat = "','".join(existing_page_ids)
+    cursor.execute(f"DELETE FROM embeddings WHERE page_id NOT IN ('{page_ids_concat}')")
+    num_deleted = cursor.rowcount
+    return num_deleted
+
+
 def get_embedding(text: str):
     response = openai.Embedding.create(
         input=text,

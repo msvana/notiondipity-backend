@@ -50,3 +50,9 @@ def update_embeddings():
             conn.commit()
 
     conn.commit()
+
+    logging.info('Removing embeddings for deleted pages')
+    all_page_ids = [p['id'] for p in all_pages]
+    num_deleted = embeddings.delete_removed_records(cursor, all_page_ids)
+    conn.commit()
+    logging.info(f'Deleted {num_deleted} pages')
