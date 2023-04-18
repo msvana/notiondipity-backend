@@ -1,17 +1,24 @@
-import sys
 import os
+import sys
 
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
-from flask import Flask
+from flask import Flask, request, Response
 from flask_cors import CORS
 
 from embeddings import get_embedding, find_closest
 from notiondipity_backend.notion import get_page_info, get_page_text
 from notiondipity_backend.utils import create_postgres_connection
+from notiondipity_backend.notion import get_access_token
 
 app = Flask(__name__)
 CORS(app)
+
+
+@app.before_request
+def basic_authentication():
+    if request.method.lower() == 'options':
+        return Response()
 
 
 @app.route('/recommend/<page_id>')
@@ -28,6 +35,17 @@ def recommend(page_id: str):
             'currentPage': current_page,
             'recommendations': similar_pages
         }
+    except IOError as e:
+        return str(e), 500
+
+
+@app.route('/token/', methods=['POST', 'OPTIONS'])
+def token():
+    code = request.json['code']
+    redirect_uri = request.json['redirectUri']
+    try:
+        access_token = get_access_token(code, redirect_uri)
+        return {'accessToken': access_token}
     except IOError as e:
         return str(e), 500
 

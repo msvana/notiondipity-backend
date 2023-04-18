@@ -1,10 +1,14 @@
+import base64
+import json
+import urllib.parse
+
 import requests
 
-from notiondipity_backend.config import NOTION_HEADERS, NOTION_BASE_URL
+from notiondipity_backend import config
 
 
 def get_all_pages():
-    url = f'{NOTION_BASE_URL}search'
+    url = f'{config.NOTION_BASE_URL}search'
     start_cursor = None
     all_pages = []
 
@@ -13,7 +17,7 @@ def get_all_pages():
         if start_cursor:
             body['start_cursor'] = start_cursor
 
-        response = requests.post(url, json=body, headers=NOTION_HEADERS)
+        response = requests.post(url, json=body, headers=config.NOTION_HEADERS)
         data = response.json()
         for p in data['results']:
             all_pages.append(p)
@@ -27,8 +31,8 @@ def get_all_pages():
 
 
 def get_page_info(page_id: str) -> dict:
-    url = f'{NOTION_BASE_URL}pages/{page_id}'
-    response = requests.get(url, headers=NOTION_HEADERS)
+    url = f'{config.NOTION_BASE_URL}pages/{page_id}'
+    response = requests.get(url, headers=config.NOTION_HEADERS)
 
     if response.status_code != 200:
         raise IOError(f'Notion API returned status code {response.status_code}')
@@ -43,8 +47,8 @@ def get_page_info(page_id: str) -> dict:
 
 
 def get_page_text(page_id: str) -> str:
-    url = f'{NOTION_BASE_URL}blocks/{page_id}/children'
-    response = requests.get(url, headers=NOTION_HEADERS)
+    url = f'{config.NOTION_BASE_URL}blocks/{page_id}/children'
+    response = requests.get(url, headers=config.NOTION_HEADERS)
 
     if response.status_code != 200:
         raise IOError(f'Notion API returned status code {response.status_code}')
@@ -60,3 +64,24 @@ def get_page_text(page_id: str) -> str:
 
     full_text = ' '.join(full_text)
     return full_text
+
+
+def get_access_token(code: str, redirect_uri: str) -> str:
+    auth_encoded = base64.b64encode(
+        bytes(f'{config.NOTION_OAUTH_CLIENT_ID}:{config.NOTION_OAUTH_CLIENT_SECRET}', 'utf-8'))
+    url = f'{config.NOTION_BASE_URL}oauth/token'
+
+    headers = {
+        'Authorization': f'Basic {auth_encoded.decode()}',
+    }
+    data = {
+        'grant_type': 'authorization_code',
+        'code': code,
+        'redirect_uri': redirect_uri
+    }
+    response = requests.post(url, json=data, headers=headers)
+    if response.status_code == 200:
+        return response.json()['access_token']
+    else:
+        print(response.content)
+        raise IOError(f'Notion API returned status code {response.status_code}')
