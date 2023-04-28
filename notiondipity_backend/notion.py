@@ -1,6 +1,4 @@
 import base64
-import json
-import urllib.parse
 
 import requests
 
@@ -82,6 +80,17 @@ def get_access_token(code: str, redirect_uri: str) -> str:
     response = requests.post(url, json=data, headers=headers)
     if response.status_code == 200:
         return response.json()['access_token']
+    else:
+        print(response.content)
+        raise IOError(f'Notion API returned status code {response.status_code}')
+
+
+def get_user_id(access_token: str) -> str:
+    url =f'{config.NOTION_BASE_URL}users/me'
+    config.NOTION_HEADERS['Authorization'] = f'Bearer {access_token}'
+    response = requests.get(url, headers=config.NOTION_HEADERS)
+    if response.status_code == 200:
+        return response.json()['id']
     else:
         print(response.content)
         raise IOError(f'Notion API returned status code {response.status_code}')

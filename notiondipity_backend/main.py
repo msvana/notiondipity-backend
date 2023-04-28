@@ -7,7 +7,7 @@ from flask import Flask, request, Response
 from flask_cors import CORS
 
 from embeddings import get_embedding, find_closest
-from notiondipity_backend.notion import get_page_info, get_page_text
+from notiondipity_backend.notion import get_page_info, get_page_text, get_user_id
 from notiondipity_backend.utils import create_postgres_connection
 from notiondipity_backend.notion import get_access_token
 
@@ -49,9 +49,18 @@ def token():
     except IOError as e:
         return str(e), 500
 
+@app.route('/verify-token', methods=['POST'])
+def verify_token():
+    access_token = request.json.get('accessToken')
+    try:
+        get_user_id(access_token)
+        valid = True
+    except IOError:
+        valid = False
+    return {'valid': valid}
 
 def main():
-    app.run(host='0.0.0.0', debug=True)
+    app.run(host='0.0.0.0', debug=True, port=5001)
 
 
 if __name__ == '__main__':

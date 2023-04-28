@@ -7,7 +7,6 @@ NOTION_OAUTH_CLIENT_SECRET = os.environ.get('NOTION_OAUTH_CLIENT_SECRET')
 
 NOTION_HEADERS = {
     "Notion-Version": "2022-06-28",
-    "Authorization": f"Bearer {NOTION_API_KEY}",
     "Content-Type": "application/json",
 }
 
