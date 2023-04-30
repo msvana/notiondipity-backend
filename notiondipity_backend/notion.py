@@ -5,7 +5,7 @@ import requests
 from notiondipity_backend import config
 
 
-def get_all_pages():
+def get_all_pages(access_token: str):
     url = f'{config.NOTION_BASE_URL}search'
     start_cursor = None
     all_pages = []
@@ -15,7 +15,7 @@ def get_all_pages():
         if start_cursor:
             body['start_cursor'] = start_cursor
 
-        response = requests.post(url, json=body, headers=config.NOTION_HEADERS)
+        response = requests.post(url, json=body, headers=create_headers_from_token(access_token))
         data = response.json()
         for p in data['results']:
             all_pages.append(p)
@@ -28,9 +28,9 @@ def get_all_pages():
     return all_pages
 
 
-def get_page_info(page_id: str) -> dict:
+def get_page_info(page_id: str, access_token: str) -> dict:
     url = f'{config.NOTION_BASE_URL}pages/{page_id}'
-    response = requests.get(url, headers=config.NOTION_HEADERS)
+    response = requests.get(url, headers=create_headers_from_token(access_token))
 
     if response.status_code != 200:
         raise IOError(f'Notion API returned status code {response.status_code}')
@@ -44,9 +44,9 @@ def get_page_info(page_id: str) -> dict:
     }
 
 
-def get_page_text(page_id: str) -> str:
+def get_page_text(page_id: str, access_token: str) -> str:
     url = f'{config.NOTION_BASE_URL}blocks/{page_id}/children'
-    response = requests.get(url, headers=config.NOTION_HEADERS)
+    response = requests.get(url, headers=create_headers_from_token(access_token))
 
     if response.status_code != 200:
         raise IOError(f'Notion API returned status code {response.status_code}')
@@ -94,3 +94,11 @@ def get_user_id(access_token: str) -> str:
     else:
         print(response.content)
         raise IOError(f'Notion API returned status code {response.status_code}')
+
+def create_headers_from_token(access_token: str):
+    return {
+        "Notion-Version": "2022-06-28",
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {access_token}"
+    }
+

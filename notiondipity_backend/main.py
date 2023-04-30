@@ -7,9 +7,10 @@ from flask import Flask, request, Response
 from flask_cors import CORS
 
 from embeddings import get_embedding, find_closest
-from notiondipity_backend.notion import get_page_info, get_page_text, get_user_id
+
+from notiondipity_backend.auth import extract_token
+from notiondipity_backend.notion import get_access_token, get_page_info, get_page_text, get_user_id
 from notiondipity_backend.utils import create_postgres_connection
-from notiondipity_backend.notion import get_access_token
 
 app = Flask(__name__)
 CORS(app)
@@ -22,11 +23,12 @@ def basic_authentication():
 
 
 @app.route('/recommend/<page_id>')
-def recommend(page_id: str):
+@extract_token
+def recommend(page_id: str, access_token: str):
     _, cursor = create_postgres_connection()
     try:
-        current_page = get_page_info(page_id)
-        page_text = get_page_text(page_id)
+        current_page = get_page_info(page_id, access_token)
+        page_text = get_page_text(page_id, access_token)
         page_embedding = get_embedding(page_text)
         similar_pages = find_closest(cursor, page_embedding)
         similar_pages = list(filter(lambda p: p[0].page_url != current_page['url'], similar_pages))
