@@ -26,10 +26,11 @@ def basic_authentication():
 def recommend(page_id: str, access_token: str):
     _, cursor = create_postgres_connection()
     try:
+        user_id = notion.get_user_id(access_token)
         current_page = notion.get_page_info(page_id, access_token)
         page_text = notion.get_page_text(page_id, access_token)
         page_embedding = get_embedding(page_text)
-        similar_pages = find_closest(cursor, page_embedding)
+        similar_pages = find_closest(cursor, user_id, page_embedding)
         similar_pages = list(filter(lambda p: p[0].page_url != current_page['url'], similar_pages))
         similar_pages = [(p[0].page_url, p[1]) for p in similar_pages[:5]]
         return {
