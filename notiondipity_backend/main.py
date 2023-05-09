@@ -1,6 +1,3 @@
-from notiondipity_backend.utils import create_postgres_connection
-from notiondipity_backend import auth, notion, embeddings
-from embeddings import get_embedding, find_closest
 from flask_cors import CORS
 from flask import Flask, request, Response
 import os
@@ -9,6 +6,8 @@ from datetime import datetime, timedelta
 
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
+from notiondipity_backend.utils import create_postgres_connection
+from notiondipity_backend import auth, notion, embeddings
 
 app = Flask(__name__)
 CORS(app)
@@ -28,16 +27,19 @@ def recommend(page_id: str, access_token: str):
         user_id = notion.get_user_id(access_token)
         current_page = notion.get_page_info(page_id, access_token)
         page_text = notion.get_page_text(page_id, access_token)
-        page_embedding = get_embedding(page_text)
-        similar_pages = find_closest(cursor, user_id, page_embedding)
+        page_embedding = embeddings.get_embedding(page_text)
+        similar_pages = embeddings.find_closest(cursor, user_id, page_embedding)
         similar_pages = list(
             filter(lambda p: p[0].page_url != current_page['url'], similar_pages))
-        similar_pages = [(p[0].page_url, p[1]) for p in similar_pages[:5]]
+        similar_pages = [(p[0].page_url, p[0].page_title, p[1]) for p in similar_pages[:7]]
         return {
             'currentPage': current_page,
             'recommendations': similar_pages
         }
     except IOError as e:
+        error_string = str(e)
+        if error_string.endswith('404'):
+            return {'status': 'error', 'error': 'Not found'}, 404
         return str(e), 500
 
 
@@ -94,7 +96,7 @@ def refresh_embeddings(access_token: str):
         full_text = f'{title}\n{page_text}'
         embedding = embeddings.get_embedding(full_text)
         page_embedding_record = embeddings.PageEmbeddingRecord(
-            page['id'], page['url'], embedding, page_last_updated, datetime.now(), user_id)
+            page['id'], user_id, page['url'], title, embedding, page_last_updated, datetime.now())
         embeddings.add_embedding_record(cursor, page_embedding_record)
         if (i + 1) % 10 == 0:
             conn.commit()

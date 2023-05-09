@@ -16,6 +16,6 @@ COPY poetry.lock pyproject.toml ./
 COPY . /app
 RUN poetry install
 
-EXPOSE 5000
+EXPOSE 5001
 CMD ["poetry", "run", "python", "notiondipity_backend/main.py"]
 

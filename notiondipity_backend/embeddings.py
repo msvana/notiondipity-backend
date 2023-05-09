@@ -13,19 +13,20 @@ openai.api_key = OPENAI_API_KEY
 @dataclass
 class PageEmbeddingRecord:
     page_id: str
+    user_id: str
     page_url: str
+    page_title: str
     embedding: np.ndarray
     page_last_updated: datetime | None
     embedding_last_updated: datetime | None
-    user_id: str
 
     def __iter__(self):
-        yield from [self.page_id, self.page_url, np.array2string(self.embedding), self.page_last_updated,
-                    self.embedding_last_updated, self.user_id]
+        yield from [self.page_id, self.user_id, self.page_url, self.page_title,
+                    self.embedding.tobytes(), self.page_last_updated, self.embedding_last_updated]
 
 
 def add_embedding_record(cursor: psycopg2.extensions.cursor, embedding_record: PageEmbeddingRecord):
-    cursor.execute('INSERT INTO embeddings VALUES (%s, %s, %s, %s, %s)',
+    cursor.execute('INSERT INTO embeddings VALUES (%s, %s, %s, %s, %s, %s, %s)',
                    tuple(embedding_record))
 
 
@@ -35,7 +36,7 @@ def get_embedding_record(cursor: psycopg2.extensions.cursor, user_id: str, page_
     result = cursor.fetchone()
     if result:
         record = list(result)
-        record[2] = np.fromstring(record[2].tobytes())  # type: ignore
+        record[4] = np.fromstring(record[4].tobytes())  # type: ignore
         return PageEmbeddingRecord(*record)
     return None
 
@@ -45,7 +46,7 @@ def get_all_embedding_records(cursor: psycopg2.extensions.cursor, user_id: str) 
     page_embeddings_records = []
     for record in cursor.fetchall():
         record = list(record)
-        record[2] = np.fromstring(record[2].tobytes())  # type: ignore
+        record[4] = np.fromstring(record[4].tobytes())  # type: ignore
         page_embeddings_records.append(PageEmbeddingRecord(*record))
     return page_embeddings_records
 
