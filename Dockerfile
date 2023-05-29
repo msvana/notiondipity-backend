@@ -17,5 +17,5 @@ COPY . /app
 RUN poetry install
 
 EXPOSE 5001
-CMD ["poetry", "run", "python", "notiondipity_backend/main.py"]
+CMD ["poetry", "run", "gunicorn", "-w", "4", "-b", "0.0.0.0:5001", "--access-logfile=-",  "notiondipity_backend.main:app"]
 

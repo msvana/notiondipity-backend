@@ -32,3 +32,10 @@ def update_last_updated_time(cursor: psycopg2.extensions.cursor, user_id: str):
     cursor.execute('UPDATE last_updates SET last_update = %s WHERE user_id = %s', (datetime.now(), user_id))
     if cursor.rowcount == 0:
         cursor.execute('INSERT INTO last_updates VALUES (%s, %s)', (user_id, datetime.now()))
+
+def has_finished_update(cursor: psycopg2.extensions.cursor, user_id: str) -> bool:
+    cursor.execute('SELECT * FROM last_updates WHERE user_id = %s AND finished = 1 LIMIT 1', (user_id,))
+    return cursor.rowcount > 0
+
+def mark_finished_update(cursor: psycopg2.extensions.cursor, user_id: str):
+    cursor.execute('UPDATE last_updates SET finished = 1 WHERE user_id = %s', (user_id,))

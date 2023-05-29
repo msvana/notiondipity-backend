@@ -2,7 +2,7 @@ from flask_cors import CORS
 from flask import Flask, request, Response
 import os
 import sys
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
@@ -24,11 +24,16 @@ def basic_authentication():
 def recommend(page_id: str, access_token: str):
     _, cursor = create_postgres_connection()
     try:
+        start_time = datetime.now()
         user_id = notion.get_user_id(access_token)
+        print('User Info:', datetime.now() - start_time)
         current_page = notion.get_page_info(page_id, access_token)
         page_text = notion.get_page_text(page_id, access_token)
+        print('Current page data:', datetime.now() - start_time)
         page_embedding = embeddings.get_embedding(page_text)
+        print('Page embedding:', datetime.now() - start_time)
         similar_pages = embeddings.find_closest(cursor, user_id, page_embedding)
+        print('Finding closest', datetime.now() - start_time)
         similar_pages = list(
             filter(lambda p: p[0].page_url != current_page['url'], similar_pages))
         similar_pages = [(p[0].page_url, p[0].page_title, p[1]) for p in similar_pages[:7]]
@@ -102,8 +107,17 @@ def refresh_embeddings(access_token: str):
             conn.commit()
     all_page_ids = [p['id'] for p in all_pages]
     embeddings.delete_removed_records(cursor, user_id, all_page_ids)
+    auth.mark_finished_update(cursor, user_id)
     conn.commit()
     return {'status': 'OK'}
+
+@app.route('/has-data')
+@auth.extract_token
+def has_data(access_token: str):
+    _, cursor = create_postgres_connection()
+    user_id = notion.get_user_id(access_token)
+    print(user_id)
+    return {'status': 'OK', 'hasData': auth.has_finished_update(cursor, user_id)}
 
 
 def main():
