@@ -1,15 +1,18 @@
-from flask_cors import CORS
-from flask import Flask, request, Response
 import os
 import sys
-from datetime import date, datetime, timedelta
+from datetime import datetime, timedelta
+
+from flask import Flask, request, Response
+from flask_cors import CORS
 
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
 from notiondipity_backend.utils import create_postgres_connection
 from notiondipity_backend import auth, notion, embeddings
+from notiondipity_backend.api.recommend import recommend_api
 
 app = Flask(__name__)
+app.register_blueprint(recommend_api)
 CORS(app)
 
 
@@ -110,6 +113,7 @@ def refresh_embeddings(access_token: str):
     auth.mark_finished_update(cursor, user_id)
     conn.commit()
     return {'status': 'OK'}
+
 
 @app.route('/has-data')
 @auth.extract_token
