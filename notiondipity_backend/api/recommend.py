@@ -12,13 +12,13 @@ recommend_api = flask.Blueprint('recommend_api', __name__)
 @auth.extract_token
 def recommend(page_id: str, access_token: str):
     page_title: str = flask.request.json['title']
+    page_text: str = flask.request.json['content']
     _, cursor = create_postgres_connection()
     try:
         start_time = datetime.now()
         user_id = notion.get_user_id(access_token)
         print('User Info:', datetime.now() - start_time)
-        page_text = f'{page_title} {notion.get_page_text(page_id, access_token)}'
-        print('Current page data:', datetime.now() - start_time)
+        page_text = f'{page_title} {page_text}'
         page_embedding = embeddings.get_embedding(page_text)
         print('Page embedding:', datetime.now() - start_time)
         similar_pages = embeddings.find_closest(cursor, user_id, page_embedding)
