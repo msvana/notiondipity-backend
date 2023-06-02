@@ -10,3 +10,4 @@ NOTION_HEADERS = {
 }
 
 OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
+JWT_SECRET = os.environ.get('JWT_SECRET')

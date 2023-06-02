@@ -17,6 +17,7 @@ psycopg2-binary = "^2.9.6"
 peewee = "^3.16.0"
 autopep8 = "^2.0.2"
 gunicorn = "^20.1.0"
+pyjwt = "^2.7.0"
 
 [tool.poetry.scripts]
 update_embeddings = 'notiondipity_backend.scripts:update_embeddings'
