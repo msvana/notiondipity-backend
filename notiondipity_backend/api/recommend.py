@@ -2,7 +2,8 @@ from datetime import datetime
 
 import flask
 
-from notiondipity_backend import auth, embeddings, notion
+from notiondipity_backend import auth, embeddings
+from notiondipity_backend.resources import notion
 from notiondipity_backend.utils import create_postgres_connection
 
 recommend_api = flask.Blueprint('recommend_api', __name__)

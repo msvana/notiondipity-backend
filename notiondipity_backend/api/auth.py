@@ -2,7 +2,7 @@ import flask
 import jwt
 
 from notiondipity_backend import config
-from notiondipity_backend import notion
+from notiondipity_backend.resources import notion
 
 auth_api = flask.Blueprint('auth_api', __name__)
 

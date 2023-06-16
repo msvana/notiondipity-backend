@@ -3,7 +3,9 @@ from datetime import datetime, timedelta
 from flask import Flask, request, Response
 from flask_cors import CORS
 
-from notiondipity_backend import auth, notion, embeddings
+import notiondipity_backend.resources.last_updated
+from notiondipity_backend import auth, embeddings
+from notiondipity_backend.resources import notion
 from notiondipity_backend.api.auth import auth_api
 from notiondipity_backend.api.recommend import recommend_api
 from notiondipity_backend.utils import create_postgres_connection
@@ -35,11 +37,11 @@ def verify_token():
 @auth.authenticate
 def refresh_embeddings(user: dict):
     conn, cursor = create_postgres_connection()
-    last_updated_time = auth.get_last_updated_time(cursor, user['user_id'])
+    last_updated_time = notiondipity_backend.resources.last_updated.get_last_updated_time(cursor, user['user_id'])
     one_hour_ago = datetime.now() - timedelta(hours=1)
     if last_updated_time > one_hour_ago:
         return {'status': 'error', 'error': 'Last update was less than an hour ago'}, 425
-    auth.update_last_updated_time(cursor, user['user_id'])
+    notiondipity_backend.resources.last_updated.update_last_updated_time(cursor, user['user_id'])
     conn.commit()
     all_pages = notion.get_all_pages(user['access_token'])
     for i, page in enumerate(all_pages):
@@ -66,7 +68,7 @@ def refresh_embeddings(user: dict):
             conn.commit()
     all_page_ids = [p['id'] for p in all_pages]
     embeddings.delete_removed_records(cursor, user['user_id'], all_page_ids)
-    auth.mark_finished_update(cursor, user['user_id'])
+    notiondipity_backend.resources.last_updated.mark_finished_update(cursor, user['user_id'])
     conn.commit()
     return {'status': 'OK'}
 
@@ -75,7 +77,7 @@ def refresh_embeddings(user: dict):
 @auth.authenticate
 def has_data(user: dict):
     _, cursor = create_postgres_connection()
-    return {'status': 'OK', 'hasData': auth.has_finished_update(cursor, user['user_id'])}
+    return {'status': 'OK', 'hasData': notiondipity_backend.resources.last_updated.has_finished_update(cursor, user['user_id'])}
 
 
 def main():

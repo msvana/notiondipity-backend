@@ -2,7 +2,7 @@ import datetime
 import logging
 
 from notiondipity_backend import embeddings
-from notiondipity_backend import notion
+from notiondipity_backend.resources import notion
 from notiondipity_backend.utils import create_postgres_connection
 
 logging.getLogger().setLevel('INFO')
