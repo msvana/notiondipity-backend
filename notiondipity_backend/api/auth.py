@@ -19,15 +19,3 @@ def token_v1():
         return {'token': jwt_token}
     except IOError as e:
         return str(e), 500
-
-
-@auth_api.route('/token/', methods=['POST'])
-def token():
-    code = flask.request.json['code']
-    redirect_uri = flask.request.json['redirectUri']
-
-    try:
-        access_token = notion.get_access_token(code, redirect_uri)
-        return {'accessToken': access_token}
-    except IOError as e:
-        return str(e), 500

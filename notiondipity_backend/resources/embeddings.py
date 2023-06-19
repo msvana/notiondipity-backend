@@ -17,14 +17,13 @@ class PageEmbeddingRecord:
     user_id: str
     page_url: str
     page_title: str
-    embedding: np.ndarray
+    embedding_bytes: bytes
     page_last_updated: datetime | None
     embedding_last_updated: datetime | None
-    embedding_bytes: bytes
 
     @property
-    def embedding_bytes(self) -> bytes:
-        return self.embedding.tobytes()
+    def embedding(self) -> np.ndarray:
+        return np.frombuffer(self.embedding_bytes)  # type: ignore
 
 
 def add_embedding_record(crs: cursor, embedding_record: PageEmbeddingRecord):
@@ -46,7 +45,7 @@ def get_embedding_record(crs: cursor, user_id: str, page_id: str) -> Optional[Pa
     result = crs.fetchone()
     if result:
         record = list(result)
-        record[4] = np.fromstring(record[4].tobytes())  # type: ignore
+        record[4] = record[4].tobytes()  # type: ignore
         return PageEmbeddingRecord(*record)
     return None
 
@@ -56,7 +55,7 @@ def get_all_embedding_records(crs: cursor, user_id: str) -> list[PageEmbeddingRe
     page_embeddings_records = []
     for record in crs.fetchall():
         record = list(record)
-        record[4] = np.fromstring(record[4].tobytes())  # type: ignore
+        record[4] = record[4].tobytes()  # type: ignore
         page_embeddings_records.append(PageEmbeddingRecord(*record))
     return page_embeddings_records
 

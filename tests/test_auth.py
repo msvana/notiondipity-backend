@@ -1,15 +1,6 @@
-import os
+from base import client, TEST_TOKEN
 
-from pytest import fixture
-
-from main import app
-
-TEST_TOKEN = os.environ.get('TEST_TOKEN')
-
-
-@fixture
-def client():
-    return app.test_client()
+assert client
 
 
 def test_no_token(client):
