@@ -2,15 +2,15 @@ from datetime import datetime
 
 import flask
 
-from notiondipity_backend import auth, embeddings
-from notiondipity_backend.resources import notion
+import notiondipity_backend.utils
+from notiondipity_backend.resources import notion, embeddings
 from notiondipity_backend.utils import create_postgres_connection
 
 recommend_api = flask.Blueprint('recommend_api', __name__)
 
 
 @recommend_api.route('/v1/recommend/<page_id>', methods=['POST'])
-@auth.authenticate
+@notiondipity_backend.utils.authenticate
 def recommend_v1(page_id: str, user: dict):
     page_title: str = flask.request.json['title']
     page_text: str = flask.request.json['content']
@@ -37,7 +37,7 @@ def recommend_v1(page_id: str, user: dict):
 
 
 @recommend_api.route('/recommend/<page_id>')
-@auth.authenticate
+@notiondipity_backend.utils.authenticate
 def recommend(page_id: str, user: dict):
     _, cursor = create_postgres_connection()
     try:
