@@ -9,14 +9,14 @@ from flask import request
 from notiondipity_backend.config import JWT_SECRET
 
 
-def create_postgres_connection() -> tuple[psycopg2.extensions.connection, psycopg2.extensions.cursor]:
+def create_postgres_connection() -> psycopg2.extensions.connection:
     conn: psycopg2.extensions.connection = psycopg2.connect(
         host=os.environ.get('PG_HOST'),
         port=os.environ.get('PG_PORT'),
         user=os.environ.get('PG_USER'),
         password=os.environ.get('PG_PASSWORD'),
         database='postgres')
-    return conn, conn.cursor()
+    return conn
 
 
 def authenticate(func):

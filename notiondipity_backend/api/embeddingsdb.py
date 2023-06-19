@@ -1,17 +1,17 @@
 from datetime import datetime, timedelta
 
-from flask import Blueprint
+import flask
 
 from notiondipity_backend import utils
 from notiondipity_backend.resources import last_updated, notion, embeddings
 
-embeddingsdb_api = Blueprint('embeddingsdb_api', __name__)
+embeddingsdb_api = flask.Blueprint('embeddingsdb_api', __name__)
 
 
 @embeddingsdb_api.route('/has-data')
 @utils.authenticate
 def has_data(user: dict):
-    _, cursor = utils.create_postgres_connection()
+    cursor = flask.current_app.config['db'].cursor()
     return {'status': 'OK', 'hasData': last_updated.has_finished_update(cursor, user['user_id'])}
 
 

@@ -2,7 +2,6 @@ import flask
 
 import notiondipity_backend.utils
 from notiondipity_backend.resources import embeddings
-from notiondipity_backend.utils import create_postgres_connection
 
 recommend_api = flask.Blueprint('recommend_api', __name__)
 
@@ -10,9 +9,9 @@ recommend_api = flask.Blueprint('recommend_api', __name__)
 @recommend_api.route('/v1/recommend/<page_id>', methods=['POST'])
 @notiondipity_backend.utils.authenticate
 def recommend_v1(page_id: str, user: dict):
+    cursor = flask.current_app.config['db'].cursor()
     page_title: str = flask.request.json['title']
     page_text: str = flask.request.json['content']
-    _, cursor = create_postgres_connection()
     try:
         page_text = f'{page_title} {page_text}'
         page_embedding = embeddings.get_embedding(page_text)
