@@ -1,4 +1,4 @@
 .idea/
 .env
-embs.pickle
 **/__pycache__/
+.pytest_cache/

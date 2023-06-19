@@ -7,7 +7,6 @@ import psycopg2.extensions
 from flask import request
 
 from notiondipity_backend.config import JWT_SECRET
-from notiondipity_backend.resources.notion import get_user_id
 
 
 def create_postgres_connection() -> tuple[psycopg2.extensions.connection, psycopg2.extensions.cursor]:
@@ -30,16 +29,6 @@ def authenticate(func):
             return 'The authorization header must start with `Bearer `', 401
         auth_token = authorization_header.split(' ', 1)[1].strip()
 
-        # Legacy authentication
-        if len(auth_token) == 50:
-            try:
-                user_id = get_user_id(auth_token)
-                user_info = {'user_id': user_id, 'access_token': auth_token}
-                return func(*args, **kwargs, user=user_info)
-            except IOError:
-                return 'Invalid authentication token', 401
-
-        # New authentication
         try:
             user_info = jwt.decode(auth_token, JWT_SECRET, algorithms=['HS256'])
             return func(*args, **kwargs, user=user_info)

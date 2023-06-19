@@ -18,9 +18,9 @@ class PageEmbeddingRecord:
     page_url: str
     page_title: str
     embedding: np.ndarray
-    embedding_bytes: bytes
     page_last_updated: datetime | None
     embedding_last_updated: datetime | None
+    embedding_bytes: bytes
 
     @property
     def embedding_bytes(self) -> bytes:
