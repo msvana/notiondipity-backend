@@ -1,5 +1,6 @@
 import os
 from functools import wraps
+from typing import Optional
 
 import jwt
 import psycopg2
@@ -9,13 +10,16 @@ from flask import request
 from notiondipity_backend.config import JWT_SECRET
 
 
-def create_postgres_connection() -> psycopg2.extensions.connection:
-    conn: psycopg2.extensions.connection = psycopg2.connect(
-        host=os.environ.get('PG_HOST'),
-        port=os.environ.get('PG_PORT'),
-        user=os.environ.get('PG_USER'),
-        password=os.environ.get('PG_PASSWORD'),
-        database='postgres')
+def create_postgres_connection() -> Optional[psycopg2.extensions.connection]:
+    try:
+        conn: psycopg2.extensions.connection = psycopg2.connect(
+            host=os.environ.get('PG_HOST'),
+            port=os.environ.get('PG_PORT'),
+            user=os.environ.get('PG_USER'),
+            password=os.environ.get('PG_PASSWORD'),
+            database='postgres')
+    except psycopg2.OperationalError:
+        return None
     return conn
 
 

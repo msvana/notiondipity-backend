@@ -1,6 +1,6 @@
-from base import client, TEST_HEADERS
+from base import client, db, TEST_HEADERS
 
-assert client
+assert client, db
 
 
 def test_recommend_v1(client):

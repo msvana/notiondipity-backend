@@ -1,6 +1,6 @@
-from base import client, TEST_TOKEN
+from base import client, db, TEST_TOKEN
 
-assert client
+assert client, db
 
 
 def test_no_token(client):

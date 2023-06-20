@@ -1,7 +1,8 @@
 import os
 
-from pytest import fixture
 import psycopg2
+from pytest import fixture
+
 from main import app
 
 TEST_TOKEN = os.environ.get('TEST_TOKEN')
@@ -13,7 +14,7 @@ TEST_HEADERS = {
 
 
 @fixture
-def client():
+def db():
     connection = psycopg2.connect(
         host='10.252.1.1',
         port='10002',
@@ -30,11 +31,16 @@ def client():
         cursor.execute(test_data_script.read())
 
     connection.commit()
-    app.config['db'] = connection
+    return connection
 
+
+@fixture
+def client(db):
+    app.config['db'] = db
     yield app.test_client()
 
+    cursor = db.cursor()
     with open('sql/drop_tables.sql') as drop_tables_script:
         cursor.execute(drop_tables_script.read())
 
-    connection.close()
+    db.close()
