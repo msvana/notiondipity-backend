@@ -18,7 +18,8 @@ def has_data(user: dict):
 @embeddingsdb_api.route('/refresh-embeddings')
 @utils.authenticate
 def refresh_embeddings(user: dict):
-    conn, cursor = utils.create_postgres_connection()
+    conn = flask.current_app.config['db']
+    cursor = conn.cursor()
     last_updated_time = last_updated.get_last_updated_time(cursor, user['user_id'])
     one_hour_ago = datetime.now() - timedelta(hours=1)
     if last_updated_time > one_hour_ago:
@@ -44,7 +45,7 @@ def refresh_embeddings(user: dict):
         full_text = f'{title}\n{page_text}'
         embedding = embeddings.get_embedding(full_text)
         page_embedding_record = embeddings.PageEmbeddingRecord(
-            page['id'], user['user_id'], page['url'], title, embedding, page_last_updated, datetime.now())
+            page['id'], user['user_id'], page['url'], title, embedding.tobytes(), page_last_updated, datetime.now())
         embeddings.add_embedding_record(cursor, page_embedding_record)
         if (i + 1) % 10 == 0:
             conn.commit()

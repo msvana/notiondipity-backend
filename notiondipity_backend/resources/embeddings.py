@@ -34,7 +34,7 @@ def add_embedding_record(crs: cursor, embedding_record: PageEmbeddingRecord):
             %(page_url)s, 
             %(page_title)s, 
             %(embedding_bytes)s, 
-            %(page_past_updated)s, 
+            %(page_last_updated)s, 
             %(embedding_last_updated)s)
         ''', asdict(embedding_record))
 

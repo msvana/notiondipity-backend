@@ -15,7 +15,7 @@ def update_last_updated_time(crs: cursor, user_id: str):
     query_params = {'now': datetime.now(), 'user_id': user_id}
     crs.execute('UPDATE last_updates SET last_update = %(now)s WHERE user_id = %(user_id)s', query_params)
     if crs.rowcount == 0:
-        crs.execute('INSERT INTO last_updates VALUES (%(now)s, %(user_id)s)', query_params)
+        crs.execute('INSERT INTO last_updates VALUES (%(user_id)s, %(now)s, 0)', query_params)
 
 
 def has_finished_update(crs: cursor, user_id: str) -> bool:
