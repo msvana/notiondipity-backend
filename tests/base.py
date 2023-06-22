@@ -42,5 +42,5 @@ def client(db):
     cursor = db.cursor()
     with open('sql/drop_tables.sql') as drop_tables_script:
         cursor.execute(drop_tables_script.read())
-
+    db.commit()
     db.close()
