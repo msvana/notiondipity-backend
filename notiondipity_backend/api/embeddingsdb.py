@@ -11,14 +11,14 @@ embeddingsdb_api = flask.Blueprint('embeddingsdb_api', __name__)
 @embeddingsdb_api.route('/has-data')
 @utils.authenticate
 def has_data(user: dict):
-    cursor = flask.current_app.config['db'].cursor()
+    cursor = flask.current_app.config['db']().cursor()
     return {'status': 'OK', 'hasData': last_updated.has_finished_update(cursor, user['user_id'])}
 
 
 @embeddingsdb_api.route('/refresh-embeddings')
 @utils.authenticate
 def refresh_embeddings(user: dict):
-    conn = flask.current_app.config['db']
+    conn = flask.current_app.config['db']()
     cursor = conn.cursor()
     last_updated_time = last_updated.get_last_updated_time(cursor, user['user_id'])
     one_hour_ago = datetime.now() - timedelta(hours=1)

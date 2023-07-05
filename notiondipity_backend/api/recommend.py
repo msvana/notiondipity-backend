@@ -9,7 +9,7 @@ recommend_api = flask.Blueprint('recommend_api', __name__)
 @recommend_api.route('/v2/recommend/', methods=['POST'])
 @authenticate
 def recommend_v2(user: dict):
-    cursor = flask.current_app.config['db'].cursor()
+    cursor = flask.current_app.config['db']().cursor()
     page_title: str = flask.request.json['title']
     page_text: str = flask.request.json['content']
     page_id: str = flask.request.json.get('pageId')
@@ -26,7 +26,7 @@ def recommend_v2(user: dict):
 @recommend_api.route('/v1/recommend/<page_id>', methods=['POST'])
 @authenticate
 def recommend_v1(page_id: str, user: dict):
-    cursor = flask.current_app.config['db'].cursor()
+    cursor = flask.current_app.config['db']().cursor()
     page_title: str = flask.request.json['title']
     page_text: str = flask.request.json['content']
     try:

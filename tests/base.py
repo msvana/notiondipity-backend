@@ -36,7 +36,10 @@ def db():
 
 @fixture
 def client(db):
-    app.config['db'] = db
+    def get_db():
+        return db
+
+    app.config['db'] = get_db
     yield app.test_client()
 
     cursor = db.cursor()
