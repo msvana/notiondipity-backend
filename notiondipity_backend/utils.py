@@ -17,7 +17,7 @@ def create_postgres_connection() -> Optional[psycopg2.extensions.connection]:
             port=os.environ.get('PG_PORT'),
             user=os.environ.get('PG_USER'),
             password=os.environ.get('PG_PASSWORD'),
-            database='postgres')
+            database=os.environ.get('PG_DB', 'postgres'))
     except psycopg2.OperationalError:
         return None
     return conn

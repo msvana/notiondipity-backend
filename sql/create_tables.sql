@@ -1,6 +1,6 @@
 create table embeddings (
     page_id uuid not null primary key,
-    user_id uuid not null,
+    user_id varchar(64) not null,
     page_url varchar not null,
     page_title varchar,
     embedding bytea not null,
@@ -9,7 +9,7 @@ create table embeddings (
 );
 
 create table last_updates (
-    user_id uuid not null primary key,
+    user_id varchar(64) not null primary key,
     last_update timestamp not null,
     finished smallint
 );
