@@ -4,6 +4,7 @@ from typing import Optional
 
 import jwt
 import psycopg2
+from hashlib import sha256
 import psycopg2.extensions
 from flask import request
 
@@ -35,6 +36,7 @@ def authenticate(func):
 
         try:
             user_info = jwt.decode(auth_token, JWT_SECRET, algorithms=['HS256'])
+            user_info['user_id_hash'] = sha256(user_info['user_id'].encode()).hexdigest()
             return func(*args, **kwargs, user=user_info)
         except jwt.DecodeError:
             return 'Invalid authentication token', 401
