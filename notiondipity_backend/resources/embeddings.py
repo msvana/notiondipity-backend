@@ -1,9 +1,11 @@
 from dataclasses import dataclass, asdict
 from datetime import datetime
+from hashlib import sha256
 from typing import Optional
 
 import numpy as np
 import openai
+from Crypto.Cipher import ChaCha20
 from psycopg2.extensions import cursor
 
 from notiondipity_backend.config import OPENAI_API_KEY
@@ -20,10 +22,28 @@ class PageEmbeddingRecord:
     embedding_bytes: bytes
     page_last_updated: datetime | None
     embedding_last_updated: datetime | None
+    text_nonce: bytes | None = None
+    text_encrypted: bytes | None = None
 
     @property
     def embedding(self) -> np.ndarray:
         return np.frombuffer(self.embedding_bytes)  # type: ignore
+
+    def should_update(self, page_last_updated: datetime) -> bool:
+        return page_last_updated > self.embedding_last_updated or self.text_encrypted is None
+
+    def add_text(self, user_id: str, text: str):
+        key = sha256(user_id[::-1].encode()).digest()
+        cipher = ChaCha20.new(key=key)
+        self.text_encrypted = cipher.encrypt(text.encode())
+        self.text_nonce = cipher.nonce
+
+    def get_text(self, user_id: str) -> str | None:
+        if self.text_encrypted is None:
+            return None
+        key = sha256(user_id[::-1].encode()).digest()
+        cipher = ChaCha20.new(key=key, nonce=self.text_nonce)
+        return cipher.decrypt(self.text_encrypted).decode()
 
 
 def add_embedding_record(crs: cursor, embedding_record: PageEmbeddingRecord):
@@ -35,7 +55,9 @@ def add_embedding_record(crs: cursor, embedding_record: PageEmbeddingRecord):
             %(page_title)s, 
             %(embedding_bytes)s, 
             %(page_last_updated)s, 
-            %(embedding_last_updated)s)
+            %(embedding_last_updated)s,
+            %(text_nonce)s,
+            %(text_encrypted)s)
         ''', asdict(embedding_record))
 
 

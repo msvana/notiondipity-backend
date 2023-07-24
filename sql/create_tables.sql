@@ -5,7 +5,9 @@ create table embeddings (
     page_title varchar,
     embedding bytea not null,
     page_last_updated timestamp,
-    embedding_last_updated timestamp
+    embedding_last_updated timestamp,
+    text_nonce bytea,
+    text_encrypted bytea
 );
 
 create table last_updates (

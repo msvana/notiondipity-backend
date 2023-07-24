@@ -32,10 +32,9 @@ def refresh_embeddings(user: dict):
             page['last_edited_time'][:-1])
         page_embedding_record = embeddings.get_embedding_record(
             cursor, user['user_id_hash'], page['id'])
-        if page_embedding_record and page_embedding_record.embedding_last_updated:
-            if page_last_updated > page_embedding_record.embedding_last_updated:
-                embeddings.delete_embedding_record(
-                    cursor, user['user_id_hash'], page_embedding_record.page_id)
+        if page_embedding_record:
+            if page_embedding_record.should_update(page_last_updated):
+                embeddings.delete_embedding_record(cursor, user['user_id_hash'], page_embedding_record.page_id)
             else:
                 continue
         title = page['properties']['title']['title'][0]['plain_text'] if 'title' in page['properties'] else None
@@ -47,6 +46,7 @@ def refresh_embeddings(user: dict):
         page_embedding_record = embeddings.PageEmbeddingRecord(
             page['id'], user['user_id_hash'], page['url'], title,
             embedding.tobytes(), page_last_updated, datetime.now())
+        page_embedding_record.add_text(user['user_id'], full_text)
         embeddings.add_embedding_record(cursor, page_embedding_record)
         if (i + 1) % 10 == 0:
             conn.commit()
