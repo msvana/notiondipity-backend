@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "notion-backend"
-version = "0.1.0"
+version = "0.2.0"
 description = ""
 authors = ["Milos Svana <milos.svana@gmail.com>"]
 readme = "README.md"

@@ -1,6 +1,6 @@
 from flask import Flask, request, Response
 from flask_cors import CORS
-
+import logging
 from notiondipity_backend.api.auth import auth_api
 from notiondipity_backend.api.embeddingsdb import embeddingsdb_api
 from notiondipity_backend.api.recommend import recommend_api
@@ -21,6 +21,7 @@ def basic_authentication():
 
 
 def main():
+    logging.getLogger().setLevel(logging.INFO)
     app.run(host='0.0.0.0', debug=True, port=5001)
 
 

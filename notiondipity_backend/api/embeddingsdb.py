@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-
+import logging
 import flask
 
 from notiondipity_backend import utils
@@ -21,19 +21,22 @@ def refresh_embeddings(user: dict):
     conn = flask.current_app.config['db']()
     cursor = conn.cursor()
     last_updated_time = last_updated.get_last_updated_time(cursor, user['user_id_hash'])
-    one_hour_ago = datetime.now() - timedelta(hours=1)
-    if last_updated_time > one_hour_ago:
+    half_hour_ago = datetime.now() - timedelta(minutes=30)
+    if last_updated_time > half_hour_ago:
         return {'status': 'error', 'error': 'Last update was less than an hour ago'}, 425
     last_updated.update_last_updated_time(cursor, user['user_id_hash'])
     conn.commit()
+    logging.info('Getting all pages')
     all_pages = notion.get_all_pages(user['access_token'])
     for i, page in enumerate(all_pages):
+        logging.info(f"Processing page {page['id']}")
         page_last_updated = datetime.fromisoformat(
             page['last_edited_time'][:-1])
         page_embedding_record = embeddings.get_embedding_record(
             cursor, user['user_id_hash'], page['id'])
         if page_embedding_record:
             if page_embedding_record.should_update(page_last_updated):
+                logging.info(f"Updating page {page['id']}")
                 embeddings.delete_embedding_record(cursor, user['user_id_hash'], page_embedding_record.page_id)
             else:
                 continue
@@ -48,8 +51,6 @@ def refresh_embeddings(user: dict):
             embedding.tobytes(), page_last_updated, datetime.now())
         page_embedding_record.add_text(user['user_id'], full_text)
         embeddings.add_embedding_record(cursor, page_embedding_record)
-        if (i + 1) % 10 == 0:
-            conn.commit()
     all_page_ids = [p['id'] for p in all_pages]
     embeddings.delete_removed_records(cursor, user['user_id_hash'], all_page_ids)
     last_updated.mark_finished_update(cursor, user['user_id_hash'])
