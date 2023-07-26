@@ -7,7 +7,7 @@ from notiondipity_backend.utils import authenticate
 ideas_api = flask.Blueprint('ideas_api', __name__)
 
 
-@ideas_api.route('/ideas', methods=['POST'])
+@ideas_api.route('/ideas/', methods=['POST'])
 @authenticate
 def ideas(user):
     cursor = flask.current_app.config['db']().cursor()
