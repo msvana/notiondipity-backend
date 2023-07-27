@@ -13,7 +13,7 @@ def get_ideas(pages: list[str]) -> list[dict]:
     prompt = ['''
         Generate a list of project idea suggestions from the following Notion pages and then process them 
         for further use. Business ideas should be preferred, but other project ideas are welcome too. 
-        Utilize non-obvious hidden connection between the pages. Add a short description for each idea:\n''']
+        Utilize non-obvious hidden connections between different pages. Add a short description for each idea:\n''']
 
     function_definition = {
         'name': 'process_project_ideas',
