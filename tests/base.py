@@ -20,7 +20,7 @@ def db():
         port='10002',
         user='postgres',
         password='postgresDevPasswordNew',
-        database='notiondipity')
+        database='notiondipity_autotest')
 
     cursor = connection.cursor()
     with open('sql/drop_tables.sql') as drop_tables_script:
