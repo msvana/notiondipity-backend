@@ -24,13 +24,14 @@ class PageEmbeddingRecord:
     embedding_last_updated: datetime | None
     text_nonce: bytes | None = None
     text_encrypted: bytes | None = None
+    parent_id: str | None = None
 
     @property
     def embedding(self) -> np.ndarray:
         return np.frombuffer(self.embedding_bytes)  # type: ignore
 
     def should_update(self, page_last_updated: datetime) -> bool:
-        return page_last_updated > self.embedding_last_updated or self.text_encrypted is None
+        return page_last_updated > self.embedding_last_updated or self.text_encrypted is None or self.parent_id is None
 
     def add_text(self, user_id: str, text: str):
         key = sha256(user_id[::-1].encode()).digest()
@@ -57,7 +58,8 @@ def add_embedding_record(crs: cursor, embedding_record: PageEmbeddingRecord):
             %(page_last_updated)s, 
             %(embedding_last_updated)s,
             %(text_nonce)s,
-            %(text_encrypted)s)
+            %(text_encrypted)s,
+            %(parent_id)s)
         ''', asdict(embedding_record))
 
 

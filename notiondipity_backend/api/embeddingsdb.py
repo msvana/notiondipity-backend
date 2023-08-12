@@ -27,6 +27,8 @@ def refresh_embeddings(user: dict):
     conn.commit()
     all_pages = notion.get_all_pages(user['access_token'])
     for i, page in enumerate(all_pages):
+        parent = page['parent']
+        parent_id = parent[parent['type']] if parent['type'] != 'workspace' else page['id']
         page_last_updated = datetime.fromisoformat(
             page['last_edited_time'][:-1])
         page_embedding_record = embeddings.get_embedding_record(
@@ -44,7 +46,7 @@ def refresh_embeddings(user: dict):
         embedding = embeddings.get_embedding(full_text)
         page_embedding_record = embeddings.PageEmbeddingRecord(
             page['id'], user['user_id_hash'], page['url'], title,
-            embedding.tobytes(), page_last_updated, datetime.now())
+            embedding.tobytes(), page_last_updated, datetime.now(), parent_id=parent_id)
         page_embedding_record.add_text(user['user_id'], full_text)
         embeddings.add_embedding_record(cursor, page_embedding_record)
         conn.commit()
