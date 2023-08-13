@@ -7,7 +7,7 @@ def test_ideas(client):
     page_contents = {
         'title': 'Ideas',
         'content': 'Sentiment analysis on social media',
-        'pageId': 'f4067fc5-80d2-496c-a306-8e8c6f53329a'
+        'pageId': '3e47e9f4-c534-4d74-96c9-790b36b1162e'
     }
     client.get('/refresh-embeddings', headers=TEST_HEADERS)
     response = client.post('/ideas/', headers=TEST_HEADERS, json=page_contents)
@@ -23,7 +23,7 @@ def test_ideas_long(client):
     page_contents = {
         'title': 'Cvicenie',
         'content': content,
-        'pageId': 'f4067fc5-80d2-496c-a306-8e8c6f53329a'
+        'pageId': '3e47e9f4-c534-4d74-96c9-790b36b1162e'
     }
     client.get('/refresh-embeddings', headers=TEST_HEADERS)
     response = client.post('/ideas/', headers=TEST_HEADERS, json=page_contents)

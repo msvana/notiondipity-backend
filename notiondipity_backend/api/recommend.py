@@ -13,19 +13,12 @@ def recommend_v2(user: dict):
     page_title: str = flask.request.json['title']
     page_text: str = flask.request.json['content']
     page_id: str = flask.request.json.get('pageId')
-
     page_text = f'{page_title} {page_text}'
     page_embedding = embeddings.get_embedding(page_text)
     similar_pages = embeddings.find_closest(cursor, user['user_id_hash'], page_embedding)
     if page_id:
-        current_page = embeddings.get_embedding_record(cursor, user['user_id_hash'], page_id)
         similar_pages = [p for p in similar_pages if page_id.replace('-', '') not in p[0].page_url]
-        for i, record in enumerate(similar_pages):
-            page, score = record
-            if page.parent_id and (page.parent_id == current_page.parent_id or page.parent_id == current_page.page_id):
-                similar_pages[i] = (page, score * 0.9)
-        similar_pages = sorted(similar_pages, key=lambda x: x[1], reverse=True)
-
+        similar_pages = embeddings.penalize_relatives(cursor, user['user_id_hash'], page_id, similar_pages)
     similar_pages = [(p[0].page_url, p[0].page_title, p[1]) for p in similar_pages[:7]]
     return {'status': 'OK', 'recommendations': similar_pages}
 

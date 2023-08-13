@@ -47,6 +47,9 @@ class PageEmbeddingRecord:
         return cipher.decrypt(self.text_encrypted).decode()
 
 
+SimilarPages = list[tuple[PageEmbeddingRecord, float]]
+
+
 def add_embedding_record(crs: cursor, embedding_record: PageEmbeddingRecord):
     crs.execute('''
         INSERT INTO embeddings VALUES (
@@ -105,7 +108,7 @@ def get_embedding(text: str):
     return embedding
 
 
-def find_closest(crs: cursor, user_id: str, embedding) -> list[tuple[PageEmbeddingRecord, float]]:
+def find_closest(crs: cursor, user_id: str, embedding) -> SimilarPages:
     page_embeddings_records = get_all_embedding_records(crs, user_id)
     pages_with_distances = []
 
@@ -113,6 +116,19 @@ def find_closest(crs: cursor, user_id: str, embedding) -> list[tuple[PageEmbeddi
         distance = np.dot(embedding, page_embedding_record.embedding) \
                    / (np.linalg.norm(embedding) * np.linalg.norm(page_embedding_record.embedding))
         pages_with_distances.append((page_embedding_record, distance))
-    pages_sorted = sorted(pages_with_distances,
-                          key=lambda x: x[1], reverse=True)
+    pages_sorted = sorted(pages_with_distances, key=lambda x: x[1], reverse=True)
     return pages_sorted
+
+
+def penalize_relatives(crs: cursor, user_id: str, page_id: str, similar_pages: SimilarPages) -> SimilarPages:
+    current_page = get_embedding_record(crs, user_id, page_id)
+
+    for i, record in enumerate(similar_pages):
+        page, score = record
+        if page.parent_id and (
+                page.parent_id == current_page.parent_id or
+                page.parent_id == current_page.page_id or
+                page.page_id == current_page.parent_id):
+            similar_pages[i] = (page, score * 0.9)
+
+    return sorted(similar_pages, key=lambda x: x[1], reverse=True)
