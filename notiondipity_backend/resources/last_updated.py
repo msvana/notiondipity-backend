@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 
-from psycopg2.extensions import cursor
+from psycopg import cursor
 
 
 def get_last_updated_time(crs: cursor, user_id: str) -> datetime:

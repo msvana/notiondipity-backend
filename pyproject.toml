@@ -18,6 +18,7 @@ gunicorn = {extras = ["gevent"], version = "^21.2.0"}
 pyjwt = "^2.7.0"
 pycryptodome = "^3.18.0"
 tiktoken = "^0.4.0"
+psycopg = {extras = ["pool"], version = "^3.1.10"}
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.3.2"

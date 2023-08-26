@@ -1,6 +1,6 @@
 import os
 
-import psycopg2
+import psycopg_pool
 from pytest import fixture
 
 from main import app
@@ -15,35 +15,33 @@ TEST_HEADERS = {
 
 @fixture
 def db():
-    connection = psycopg2.connect(
-        host='10.252.1.1',
-        port='10002',
-        user='postgres',
-        password='postgresDevPasswordNew',
-        database='notiondipity_autotest')
+    conninfo = f"host=10.252.1.1 " \
+               f"port=10002 " \
+               f"user=postgres " \
+               f"password=postgresDevPasswordNew " \
+               f"dbname=notiondipity_autotest "
 
-    cursor = connection.cursor()
-    with open('sql/drop_tables.sql') as drop_tables_script:
-        cursor.execute(drop_tables_script.read())
-    with open('sql/create_tables.sql') as create_tables_script:
-        cursor.execute(create_tables_script.read())
-    with open('sql/test_data.sql') as test_data_script:
-        cursor.execute(test_data_script.read())
+    pool = psycopg_pool.ConnectionPool(conninfo)
+    with pool.connection() as conn:
+        cursor = conn.cursor()
+        with open('sql/drop_tables.sql') as drop_tables_script:
+            cursor.execute(drop_tables_script.read())
+        with open('sql/create_tables.sql') as create_tables_script:
+            cursor.execute(create_tables_script.read())
+        with open('sql/test_data.sql') as test_data_script:
+            cursor.execute(test_data_script.read())
 
-    connection.commit()
-    return connection
+        conn.commit()
+    return pool
 
 
 @fixture
 def client(db):
-    def get_db():
-        return db
-
-    app.config['db'] = get_db
+    app.config['db'] = db
     yield app.test_client()
 
-    cursor = db.cursor()
-    with open('sql/drop_tables.sql') as drop_tables_script:
-        cursor.execute(drop_tables_script.read())
-    db.commit()
-    db.close()
+    with db.connection() as conn:
+        cursor = conn.cursor()
+        with open('sql/drop_tables.sql') as drop_tables_script:
+            cursor.execute(drop_tables_script.read())
+        conn.commit()

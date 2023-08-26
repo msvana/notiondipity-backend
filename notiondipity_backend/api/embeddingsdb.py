@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+
 import flask
 
 from notiondipity_backend import utils
@@ -10,8 +11,10 @@ embeddingsdb_api = flask.Blueprint('embeddingsdb_api', __name__)
 @embeddingsdb_api.route('/has-data')
 @utils.authenticate
 def has_data(user: dict):
-    cursor = flask.current_app.config['db']().cursor()
-    return {'status': 'OK', 'hasData': last_updated.has_finished_update(cursor, user['user_id_hash'])}
+    with flask.current_app.config['db'].connection() as conn:
+        cursor = conn.cursor()
+        has_finished_update = last_updated.has_finished_update(cursor, user['user_id_hash'])
+    return {'status': 'OK', 'hasData': has_finished_update}
 
 
 @embeddingsdb_api.route('/refresh-embeddings')
