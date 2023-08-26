@@ -122,6 +122,8 @@ def find_closest(crs: cursor, user_id: str, embedding) -> SimilarPages:
 
 def penalize_relatives(crs: cursor, user_id: str, page_id: str, similar_pages: SimilarPages) -> SimilarPages:
     current_page = get_embedding_record(crs, user_id, page_id)
+    if current_page is None:
+        return similar_pages
 
     for i, record in enumerate(similar_pages):
         page, score = record
