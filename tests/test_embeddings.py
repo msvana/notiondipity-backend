@@ -43,8 +43,7 @@ def test_resfresh(client, db):
     response = client.get('/refresh-embeddings', headers=TEST_HEADERS)
     assert response.status_code == 200
     assert response.json['status'] == 'OK'
-    with db.connection() as conn:
-        cursor = conn.cursor()
+    with db.connection() as conn, conn.cursor() as cursor:
         all_embeddings = embeddings.get_all_embedding_records(
             cursor, '22d195198acb6e3e9e88d3c88c7980aaeed170615269153719cbd16de455c921')
     assert len(all_embeddings) == 7
