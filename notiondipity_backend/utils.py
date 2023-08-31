@@ -11,6 +11,23 @@ from flask import request
 from notiondipity_backend.config import JWT_SECRET
 
 
+class PostgresConnectionProvider:
+
+    def __init__(self):
+        self.conninfo = f"host={os.environ.get('PG_HOST')} " \
+                        f"port={os.environ.get('PG_PORT')} " \
+                        f"user={os.environ.get('PG_USER')} " \
+                        f"password={os.environ.get('PG_PASSWORD')} " \
+                        f"dbname={os.environ.get('PG_DB', 'postgres')} "
+
+    def connection(self) -> Optional[psycopg.Connection]:
+        try:
+            return psycopg.connect(self.conninfo)
+        except psycopg.OperationalError as e:
+            print(e)
+            return None
+
+
 def create_postgres_connection_pool() -> Optional[psycopg_pool.ConnectionPool]:
     try:
         conninfo = f"host={os.environ.get('PG_HOST')} " \
