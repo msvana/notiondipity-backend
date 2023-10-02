@@ -7,7 +7,7 @@ readme = "README.md"
 packages = [{ include = "notiondipity_backend" }]
 
 [tool.poetry.dependencies]
-python = "~3.10"
+python = "~3.11"
 requests = "^2.28.2"
 openai = "^0.27.2"
 numpy = "^1.24.2"
@@ -19,6 +19,7 @@ pyjwt = "^2.7.0"
 pycryptodome = "^3.18.0"
 tiktoken = "^0.4.0"
 psycopg = {extras = ["pool"], version = "^3.1.10"}
+gevent = "^23.9.1"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.3.2"

@@ -1,4 +1,4 @@
-FROM python:3.10-slim
+FROM python:3.11-slim
 
 ENV POETRY_VERSION=1.4.2
 ENV POETRY_HOME=/opt/poetry
