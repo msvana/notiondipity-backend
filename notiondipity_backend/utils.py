@@ -1,27 +1,44 @@
 import os
 from functools import wraps
+from hashlib import sha256
 from typing import Optional
 
 import jwt
-import psycopg2
-from hashlib import sha256
-import psycopg2.extensions
+import psycopg
+import psycopg_pool
 from flask import request
 
 from notiondipity_backend.config import JWT_SECRET
 
 
-def create_postgres_connection() -> Optional[psycopg2.extensions.connection]:
+class PostgresConnectionProvider:
+
+    def __init__(self):
+        self.conninfo = f"host={os.environ.get('PG_HOST')} " \
+                        f"port={os.environ.get('PG_PORT')} " \
+                        f"user={os.environ.get('PG_USER')} " \
+                        f"password={os.environ.get('PG_PASSWORD')} " \
+                        f"dbname={os.environ.get('PG_DB', 'postgres')} "
+
+    def connection(self) -> Optional[psycopg.Connection]:
+        try:
+            return psycopg.connect(self.conninfo)
+        except psycopg.OperationalError as e:
+            print(e)
+            return None
+
+
+def create_postgres_connection_pool() -> Optional[psycopg_pool.ConnectionPool]:
     try:
-        conn: psycopg2.extensions.connection = psycopg2.connect(
-            host=os.environ.get('PG_HOST'),
-            port=os.environ.get('PG_PORT'),
-            user=os.environ.get('PG_USER'),
-            password=os.environ.get('PG_PASSWORD'),
-            database=os.environ.get('PG_DB', 'postgres'))
-    except psycopg2.OperationalError:
+        conninfo = f"host={os.environ.get('PG_HOST')} " \
+                   f"port={os.environ.get('PG_PORT')} " \
+                   f"user={os.environ.get('PG_USER')} " \
+                   f"password={os.environ.get('PG_PASSWORD')} " \
+                   f"dbname={os.environ.get('PG_DB', 'postgres')} "
+        pool = psycopg_pool.ConnectionPool(conninfo)
+    except psycopg.OperationalError:
         return None
-    return conn
+    return pool
 
 
 def authenticate(func):

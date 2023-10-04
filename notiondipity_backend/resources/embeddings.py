@@ -6,7 +6,7 @@ from typing import Optional
 import numpy as np
 import openai
 from Crypto.Cipher import ChaCha20
-from psycopg2.extensions import cursor
+from psycopg import cursor
 
 from notiondipity_backend.config import OPENAI_API_KEY
 
@@ -71,9 +71,7 @@ def get_embedding_record(crs: cursor, user_id: str, page_id: str) -> Optional[Pa
         'SELECT * FROM embeddings WHERE user_id = %s AND page_id = %s', (user_id, page_id))
     result = crs.fetchone()
     if result:
-        record = list(result)
-        record[4] = record[4].tobytes()  # type: ignore
-        return PageEmbeddingRecord(*record)
+        return PageEmbeddingRecord(*result)
     return None
 
 
@@ -81,8 +79,6 @@ def get_all_embedding_records(crs: cursor, user_id: str) -> list[PageEmbeddingRe
     crs.execute('SELECT * FROM embeddings WHERE user_id = %s', (user_id,))
     page_embeddings_records = []
     for record in crs.fetchall():
-        record = list(record)
-        record[4] = record[4].tobytes()  # type: ignore
         page_embeddings_records.append(PageEmbeddingRecord(*record))
     return page_embeddings_records
 
