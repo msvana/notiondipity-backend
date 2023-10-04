@@ -13,7 +13,6 @@ openai = "^0.27.2"
 numpy = "^1.24.2"
 flask = "^2.2.3"
 flask-cors = "^4.0.0"
-psycopg2-binary = "^2.9.6"
 gunicorn = {extras = ["gevent"], version = "^21.2.0"}
 pyjwt = "^2.7.0"
 pycryptodome = "^3.18.0"
