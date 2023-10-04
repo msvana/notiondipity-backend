@@ -1,16 +1,17 @@
-import flask
+import quart
 import jwt
 
 from notiondipity_backend import config
 from notiondipity_backend.resources import notion
 
-auth_api = flask.Blueprint('auth_api', __name__)
+auth_api = quart.Blueprint('auth_api', __name__)
 
 
 @auth_api.route('/v1/token/', methods=['POST'])
-def token_v1():
-    code = flask.request.json['code']
-    redirect_uri = flask.request.json['redirectUri']
+async def token():
+    json = await quart.request.get_json()
+    code = json['code']
+    redirect_uri = json['redirectUri']
 
     try:
         access_token = notion.get_access_token(code, redirect_uri)

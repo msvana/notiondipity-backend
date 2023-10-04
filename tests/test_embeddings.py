@@ -47,4 +47,4 @@ def test_resfresh(client, db):
         all_embeddings = embeddings.get_all_embedding_records(
             cursor, '22d195198acb6e3e9e88d3c88c7980aaeed170615269153719cbd16de455c921')
     assert len(all_embeddings) == 7
-    assert 'Welcome to Notion!' in all_embeddings[0].get_text('48c73c5c-0d53-4383-83e8-2ef1bfbebe4e')
+    assert 'Movie List' in all_embeddings[0].get_text('48c73c5c-0d53-4383-83e8-2ef1bfbebe4e')

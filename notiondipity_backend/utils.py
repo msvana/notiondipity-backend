@@ -6,7 +6,7 @@ from typing import Optional
 import jwt
 import psycopg
 import psycopg_pool
-from flask import request
+from quart import request
 
 from notiondipity_backend.config import JWT_SECRET
 
@@ -43,7 +43,7 @@ def create_postgres_connection_pool() -> Optional[psycopg_pool.ConnectionPool]:
 
 def authenticate(func):
     @wraps(func)
-    def wrapper(*args, **kwargs):
+    async def wrapper(*args, **kwargs):
         authorization_header = request.headers.get('Authorization', None)
         if authorization_header is None:
             return 'No authorization header present', 401
@@ -54,7 +54,7 @@ def authenticate(func):
         try:
             user_info = jwt.decode(auth_token, JWT_SECRET, algorithms=['HS256'])
             user_info['user_id_hash'] = sha256(user_info['user_id'].encode()).hexdigest()
-            return func(*args, **kwargs, user=user_info)
+            return await func(*args, **kwargs, user=user_info)
         except jwt.DecodeError:
             return 'Invalid authentication token', 401
 

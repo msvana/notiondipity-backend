@@ -1,4 +1,6 @@
+import asyncio
 import os
+from functools import wraps
 
 import psycopg_pool
 from pytest import fixture
@@ -13,12 +15,20 @@ TEST_HEADERS = {
 }
 
 
+def aiotest(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(func(*args, **kwargs))
+    return wrapper
+
+
 @fixture
 def db():
-    conninfo = f"host=10.252.1.1 " \
-               f"port=10002 " \
+    conninfo = f"host=127.0.0.1 " \
+               f"port=10001 " \
                f"user=postgres " \
-               f"password=postgresDevPasswordNew " \
+               f"password=LpMTwZtmGa2U4rR " \
                f"dbname=notiondipity_autotest "
 
     pool = psycopg_pool.ConnectionPool(conninfo)
