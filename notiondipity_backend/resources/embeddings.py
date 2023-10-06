@@ -104,6 +104,12 @@ def get_embedding(text: str):
     return embedding
 
 
+def get_embeddings(texts: list[str]):
+    response = openai.Embedding.create(input=texts, model='text-embedding-ada-002')
+    embeddings = [np.array(e['embedding']) for e in response['data']]
+    return embeddings
+
+
 def find_closest(crs: cursor, user_id: str, embedding) -> SimilarPages:
     page_embeddings_records = get_all_embedding_records(crs, user_id)
     pages_with_distances = []
