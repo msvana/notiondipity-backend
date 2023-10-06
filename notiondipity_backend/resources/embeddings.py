@@ -3,6 +3,7 @@ from datetime import datetime
 from hashlib import sha256
 from typing import Optional
 
+import aiohttp
 import numpy as np
 import openai
 from Crypto.Cipher import ChaCha20
@@ -104,9 +105,13 @@ def get_embedding(text: str):
     return embedding
 
 
-def get_embeddings(texts: list[str]):
-    response = openai.Embedding.create(input=texts, model='text-embedding-ada-002')
-    embeddings = [np.array(e['embedding']) for e in response['data']]
+async def get_embeddings(texts: list[str]):
+    headers = {'Authorization': f'Bearer {OPENAI_API_KEY}', 'Content-Type': 'application/json'}
+    data = {'input': texts, 'model': 'text-embedding-ada-002'}
+    async with aiohttp.ClientSession() as session:
+        async with session.post('https://api.openai.com/v1/embeddings', json=data, headers=headers) as response:
+            response_json = await response.json()
+    embeddings = [np.array(e['embedding']) for e in response_json['data']]
     return embeddings
 
 

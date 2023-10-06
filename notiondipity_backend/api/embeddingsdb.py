@@ -47,7 +47,7 @@ async def refresh_embeddings(user: dict):
                     continue
             else:
                 first_update_pages.append(page_update_info)
-        first_update(cursor, first_update_pages, user['user_id_hash'], user['user_id'])
+        await first_update(cursor, first_update_pages, user['user_id_hash'], user['user_id'])
         full_update_pages.extend(first_update_pages)
         all_page_ids = [p['id'] for p in all_pages]
         embeddings.delete_removed_records(cursor, user['user_id_hash'], all_page_ids)
@@ -57,11 +57,11 @@ async def refresh_embeddings(user: dict):
         return {'status': 'OK'}
 
 
-def first_update(cursor, page_infos: list[tuple], user_id_hash: str, user_id: str):
+async def first_update(cursor, page_infos: list[tuple], user_id_hash: str, user_id: str):
     i = 0
     while i < len(page_infos):
-        chunk = page_infos[i:i+10]
-        page_embeddings = embeddings.get_embeddings([p[2] for p in chunk])
+        chunk = page_infos[i:i + 10]
+        page_embeddings = await embeddings.get_embeddings([p[2] for p in chunk])
         for j in range(len(chunk)):
             page_embedding_record = embeddings.PageEmbeddingRecord(
                 chunk[j][0], user_id_hash, chunk[j][3], chunk[j][2], page_embeddings[j].tobytes(),
@@ -75,9 +75,10 @@ async def full_update(page_infos: list[tuple], user_id_hash, user_id, access_tok
     i = 0
     with quart.current_app.config['db'].connection() as conn, conn.cursor() as cursor:
         while i < len(page_infos):
-            chunk = page_infos[i:i+10]
+            chunk = page_infos[i:i + 10]
             page_texts = [notion.get_page_text(p[0], access_token) for p in chunk]
-            page_embeddings = embeddings.get_embeddings([f'{p[2]}\n\n{page_texts[j]}' for j, p in enumerate(chunk)])
+            page_embeddings = await embeddings.get_embeddings(
+                [f'{p[2]}\n\n{page_texts[j]}' for j, p in enumerate(chunk)])
             for j in range(len(chunk)):
                 page_embedding_record = embeddings.PageEmbeddingRecord(
                     chunk[j][0], user_id_hash, chunk[j][3], chunk[j][2], page_embeddings[j].tobytes(),
