@@ -19,5 +19,5 @@ COPY . /app
 RUN poetry install
 
 EXPOSE 5001
-CMD ["poetry", "run", "gunicorn", "-w", "1", "-b", "0.0.0.0:5001", "--access-logfile=-", "--timeout=600",  "--worker-class=gevent", "main:app"]
+CMD ["poetry", "run", "hypercorn", "-w", "1", "-b", "0.0.0.0:5001", "--access-logfile=-", "main:app"]
 

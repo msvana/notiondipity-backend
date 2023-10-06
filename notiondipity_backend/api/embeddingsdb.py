@@ -1,25 +1,25 @@
 from datetime import datetime, timedelta
 
-import flask
+import quart
 
 from notiondipity_backend import utils
 from notiondipity_backend.resources import last_updated, notion, embeddings
 
-embeddingsdb_api = flask.Blueprint('embeddingsdb_api', __name__)
+embeddingsdb_api = quart.Blueprint('embeddingsdb_api', __name__)
 
 
 @embeddingsdb_api.route('/has-data')
 @utils.authenticate
-def has_data(user: dict):
-    with flask.current_app.config['db'].connection() as conn, conn.cursor() as cursor:
+async def has_data(user: dict):
+    with quart.current_app.config['db'].connection() as conn, conn.cursor() as cursor:
         has_finished_update = last_updated.has_finished_update(cursor, user['user_id_hash'])
     return {'status': 'OK', 'hasData': has_finished_update}
 
 
 @embeddingsdb_api.route('/refresh-embeddings')
 @utils.authenticate
-def refresh_embeddings(user: dict):
-    with flask.current_app.config['db'].connection() as conn, conn.cursor() as cursor:
+async def refresh_embeddings(user: dict):
+    with quart.current_app.config['db'].connection() as conn, conn.cursor() as cursor:
         last_updated_time = last_updated.get_last_updated_time(cursor, user['user_id_hash'])
         half_hour_ago = datetime.now() - timedelta(minutes=30)
         if last_updated_time > half_hour_ago:

@@ -1,26 +1,30 @@
-from base import client, db, TEST_TOKEN
+from base import aiotest, client, db, TEST_TOKEN
 
 assert client, db
 
 
-def test_no_token(client):
-    response = client.get('/has-data')
+@aiotest
+async def test_no_token(client):
+    response = await client.get('/has-data')
     assert response.status_code == 401
-    assert response.text == 'No authorization header present'
+    assert await response.get_data(True) == 'No authorization header present'
 
 
-def test_no_bearer(client):
-    response = client.get('/has-data', headers={'Authorization': 'Something'})
+@aiotest
+async def test_no_bearer(client):
+    response = await client.get('/has-data', headers={'Authorization': 'Something'})
     assert response.status_code == 401
-    assert response.text == 'The authorization header must start with `Bearer `'
+    assert await response.get_data(True) == 'The authorization header must start with `Bearer `'
 
 
-def test_jwt(client):
-    response = client.get('/has-data', headers={'Authorization': f'Bearer {TEST_TOKEN}'})
+@aiotest
+async def test_jwt(client):
+    response = await client.get('/has-data', headers={'Authorization': f'Bearer {TEST_TOKEN}'})
     assert response.status_code == 200
 
 
-def test_jwt_incorrect(client):
-    response = client.get('/has-data', headers={'Authorization': f'Bearer SomeIncorrectToken'})
+@aiotest
+async def test_jwt_incorrect(client):
+    response = await client.get('/has-data', headers={'Authorization': f'Bearer SomeIncorrectToken'})
     assert response.status_code == 401
-    assert response.text == 'Invalid authentication token'
+    assert await response.get_data(True) == 'Invalid authentication token'
