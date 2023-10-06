@@ -2,6 +2,7 @@ import base64
 import os
 from typing import TypedDict
 
+import aiohttp
 import requests
 
 from notiondipity_backend import config
@@ -13,35 +14,24 @@ class PageInfo(TypedDict):
     title: str
 
 
-def get_all_pages(access_token: str) -> list[dict]:
+async def get_all_pages(access_token: str) -> list[dict]:
     url = os.path.join(config.NOTION_BASE_URL, 'search')
     start_cursor = None
     all_pages = []
 
-    while True:
-        body = {'filter': {'property': 'object', 'value': 'page'}}
-        if start_cursor:
-            body['start_cursor'] = start_cursor
-        data = requests.post(url, json=body, headers=_create_headers_from_token(access_token)).json()
-        all_pages.extend(data['results'])
-        if not data['has_more']:
-            break
-        start_cursor = data['next_cursor']
+    async with aiohttp.ClientSession() as session:
+        while True:
+            body = {'filter': {'property': 'object', 'value': 'page'}}
+            if start_cursor:
+                body['start_cursor'] = start_cursor
+            async with session.post(url, json=body, headers=_create_headers_from_token(access_token)) as response:
+                data = await response.json()
+                all_pages.extend(data['results'])
+                if not data['has_more']:
+                    break
+                start_cursor = data['next_cursor']
 
     return all_pages
-
-
-def get_page_info(page_id: str, access_token: str) -> PageInfo:
-    url = os.path.join(config.NOTION_BASE_URL, 'pages', page_id)
-    response = requests.get(url, headers=_create_headers_from_token(access_token))
-    if response.status_code != 200:
-        raise IOError(f'Notion API returned status code {response.status_code}')
-    data = response.json()
-    return {
-        'id': data['id'],
-        'url': data['url'],
-        'title': data['properties']['title']['title'][0]['plain_text']
-    }
 
 
 def get_page_text(page_id: str, access_token: str) -> str:

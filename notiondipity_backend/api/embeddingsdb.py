@@ -30,7 +30,7 @@ async def refresh_embeddings(user: dict):
             return {'status': 'error', 'error': 'Last update was less than an hour ago'}, 425
         last_updated.update_last_updated_time(cursor, user['user_id_hash'])
         conn.commit()
-        all_pages = notion.get_all_pages(user['access_token'])
+        all_pages = await notion.get_all_pages(user['access_token'])
         for i, page in enumerate(all_pages):
             parent = page['parent']
             parent_id = parent[parent['type']] if parent['type'] != 'workspace' else page['id']
@@ -42,28 +42,18 @@ async def refresh_embeddings(user: dict):
             page_update_info = (page['id'], parent_id, title, page['url'], page_last_updated)
             if page_embedding_record:
                 if page_embedding_record.should_update(page_last_updated):
-                    embeddings.delete_embedding_record(cursor, user['user_id_hash'], page_embedding_record.page_id)
                     full_update_pages.append(page_update_info)
                 else:
                     continue
             else:
                 first_update_pages.append(page_update_info)
-            '''
-            page_text = notion.get_page_text(page['id'], user['access_token'])
-            full_text = f'{title}\n{page_text}'
-            embedding = embeddings.get_embedding(full_text)
-            page_embedding_record = embeddings.PageEmbeddingRecord(
-                page['id'], user['user_id_hash'], page['url'], title,
-                embedding.tobytes(), page_last_updated, datetime.now(), parent_id=parent_id)
-            page_embedding_record.add_text(user['user_id'], full_text)
-            embeddings.add_embedding_record(cursor, page_embedding_record)
-            conn.commit()
-            '''
         first_update(cursor, first_update_pages, user['user_id_hash'], user['user_id'])
+        full_update_pages.extend(first_update_pages)
         all_page_ids = [p['id'] for p in all_pages]
         embeddings.delete_removed_records(cursor, user['user_id_hash'], all_page_ids)
-        last_updated.mark_finished_update(cursor, user['user_id_hash'])
         conn.commit()
+        quart.current_app.add_background_task(
+            full_update, full_update_pages, user['user_id_hash'], user['user_id'], user['access_token'])
         return {'status': 'OK'}
 
 
@@ -72,12 +62,30 @@ def first_update(cursor, page_infos: list[tuple], user_id_hash: str, user_id: st
     while i < len(page_infos):
         chunk = page_infos[i:i+10]
         page_embeddings = embeddings.get_embeddings([p[2] for p in chunk])
-        for i in range(len(chunk)):
+        for j in range(len(chunk)):
             page_embedding_record = embeddings.PageEmbeddingRecord(
-                chunk[i][0], user_id_hash, chunk[i][3], chunk[i][2], page_embeddings[i].tobytes(),
-                chunk[i][4], datetime.now(), chunk[i][1])
-            page_embedding_record.add_text(user_id, chunk[i][2])
+                chunk[j][0], user_id_hash, chunk[j][3], chunk[j][2], page_embeddings[j].tobytes(),
+                chunk[j][4], datetime.now(), chunk[j][1])
+            page_embedding_record.add_text(user_id, chunk[j][2])
             embeddings.add_embedding_record(cursor, page_embedding_record)
         i += 10
 
 
+async def full_update(page_infos: list[tuple], user_id_hash, user_id, access_token):
+    i = 0
+    with quart.current_app.config['db'].connection() as conn, conn.cursor() as cursor:
+        while i < len(page_infos):
+            chunk = page_infos[i:i+10]
+            page_texts = [notion.get_page_text(p[0], access_token) for p in chunk]
+            page_embeddings = embeddings.get_embeddings([f'{p[2]}\n\n{page_texts[j]}' for j, p in enumerate(chunk)])
+            for j in range(len(chunk)):
+                page_embedding_record = embeddings.PageEmbeddingRecord(
+                    chunk[j][0], user_id_hash, chunk[j][3], chunk[j][2], page_embeddings[j].tobytes(),
+                    chunk[j][4], datetime.now(), chunk[j][1])
+                page_embedding_record.add_text(user_id, chunk[j][2])
+                embeddings.delete_embedding_record(cursor, user_id_hash, page_embedding_record.page_id)
+                embeddings.add_embedding_record(cursor, page_embedding_record)
+            conn.commit()
+            i += 10
+        last_updated.mark_finished_update(cursor, user_id_hash)
+        conn.commit()
