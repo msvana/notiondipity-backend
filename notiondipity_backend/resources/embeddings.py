@@ -97,12 +97,8 @@ def delete_removed_records(crs: cursor, user_id: str, existing_page_ids: list[st
     return num_deleted
 
 
-def get_embedding(text: str):
-    response = openai.Embedding.create(
-        input=text,
-        model='text-embedding-ada-002')
-    embedding = np.array(response['data'][0]['embedding'])
-    return embedding
+async def get_embedding(text: str) -> np.ndarray:
+    return (await get_embeddings([text]))[0]
 
 
 async def get_embeddings(texts: list[str]):

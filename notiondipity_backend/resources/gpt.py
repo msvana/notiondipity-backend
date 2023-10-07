@@ -1,6 +1,7 @@
 import json
 import logging
 
+import aiohttp
 import openai
 import tiktoken
 
@@ -9,7 +10,7 @@ from notiondipity_backend.config import OPENAI_API_KEY
 openai.api_key = OPENAI_API_KEY
 
 
-def get_ideas(pages: list[str]) -> list[dict]:
+async def get_ideas(pages: list[str]) -> list[dict]:
     prompt = '''
         Generate a list of project idea suggestions from the following Notion pages and then process them 
         for further use. Business ideas should be preferred, but other project ideas are welcome too. 
@@ -43,7 +44,7 @@ def get_ideas(pages: list[str]) -> list[dict]:
         }
     }
 
-    messages = compare_pages(pages)
+    messages = await compare_pages(pages)
     messages.append({'role': 'user', 'content': prompt})
     completion = openai.ChatCompletion.create(
         model='gpt-3.5-turbo-16k', messages=messages,
@@ -61,7 +62,7 @@ def get_ideas(pages: list[str]) -> list[dict]:
         return []
 
 
-def compare_pages(pages: list[str]) -> list[dict]:
+async def compare_pages(pages: list[str]) -> list[dict]:
     prompt = ['''
         Compare the contents of these notion pages. What are the similarities in the ideas. How do they differ? 
         Can ideas from different pages be somehow combined?\n''']
@@ -74,8 +75,12 @@ def compare_pages(pages: list[str]) -> list[dict]:
     token_encoder = tiktoken.get_encoding('cl100k_base')
     prompt_encoded = token_encoder.encode(prompt)
     prompt = token_encoder.decode(prompt_encoded[:5000])
-
     messages = [{'role': 'user', 'content': prompt}]
-    completion = openai.ChatCompletion.create(model='gpt-3.5-turbo-16k', messages=messages, temperature=0.2)
-    messages.append(completion.choices[0].message)
+    headers = {'Authorization': f'Bearer {OPENAI_API_KEY}', 'Content-Type': 'application/json'}
+    data = {'messages': messages, 'model': 'gpt-3.5-turbo-16k', 'temperature': 0.25}
+
+    async with aiohttp.ClientSession() as session:
+        async with session.post('https://api.openai.com/v1/chat/completions', json=data, headers=headers) as response:
+            completion = await response.json()
+    messages.append(completion['choices'][0]['message'])
     return messages
