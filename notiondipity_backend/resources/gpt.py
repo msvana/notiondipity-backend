@@ -2,12 +2,9 @@ import json
 import logging
 
 import aiohttp
-import openai
 import tiktoken
 
 from notiondipity_backend.config import OPENAI_API_KEY
-
-openai.api_key = OPENAI_API_KEY
 
 
 async def get_ideas(pages: list[str]) -> list[dict]:
@@ -46,11 +43,19 @@ async def get_ideas(pages: list[str]) -> list[dict]:
 
     messages = await compare_pages(pages)
     messages.append({'role': 'user', 'content': prompt})
-    completion = openai.ChatCompletion.create(
-        model='gpt-3.5-turbo-16k', messages=messages,
-        functions=[function_definition], temperature=0.2,
-        function_call={"name": "process_project_ideas"})
-    response = completion.choices[0].message
+    headers = {'Authorization': f'Bearer {OPENAI_API_KEY}', 'Content-Type': 'application/json'}
+    data = {
+        'messages': messages,
+        'model': 'gpt-3.5-turbo-16k',
+        'temperature': 0.25,
+        'functions': [function_definition],
+        'function_call': {'name': 'process_project_ideas'}
+    }
+
+    async with aiohttp.ClientSession() as session:
+        async with session.post('https://api.openai.com/v1/chat/completions', json=data, headers=headers) as response:
+            completion = await response.json()
+    response = completion['choices'][0]['message']
 
     if 'function_call' in response:
         try:
