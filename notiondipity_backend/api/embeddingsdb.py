@@ -76,7 +76,7 @@ async def full_update(page_infos: list[tuple], user_id_hash, user_id, access_tok
     with quart.current_app.config['db'].connection() as conn, conn.cursor() as cursor:
         while i < len(page_infos):
             chunk = page_infos[i:i + 10]
-            page_texts = [notion.get_page_text(p[0], access_token) for p in chunk]
+            page_texts = [await notion.get_page_text(p[0], access_token) for p in chunk]
             page_embeddings = await embeddings.get_embeddings(
                 [f'{p[2]}\n\n{page_texts[j]}' for j, p in enumerate(chunk)])
             for j in range(len(chunk)):
