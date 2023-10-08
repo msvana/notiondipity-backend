@@ -14,9 +14,10 @@ async def token():
     redirect_uri = json['redirectUri']
 
     try:
-        access_token = notion.get_access_token(code, redirect_uri)
+        access_token = await notion.get_access_token(code, redirect_uri)
+        user_id = await notion.get_user_id(access_token)
         jwt_token = jwt.encode(
-            {'access_token': access_token, 'user_id': notion.get_user_id(access_token)}, config.JWT_SECRET)
+            {'access_token': access_token, 'user_id': user_id}, config.JWT_SECRET)
         return {'token': jwt_token}
     except IOError as e:
         return str(e), 500

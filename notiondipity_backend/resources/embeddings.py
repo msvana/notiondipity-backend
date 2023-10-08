@@ -3,6 +3,7 @@ from datetime import datetime
 from hashlib import sha256
 from typing import Optional
 
+import aiohttp
 import numpy as np
 import openai
 from Crypto.Cipher import ChaCha20
@@ -96,12 +97,18 @@ def delete_removed_records(crs: cursor, user_id: str, existing_page_ids: list[st
     return num_deleted
 
 
-def get_embedding(text: str):
-    response = openai.Embedding.create(
-        input=text,
-        model='text-embedding-ada-002')
-    embedding = np.array(response['data'][0]['embedding'])
-    return embedding
+async def get_embedding(text: str) -> np.ndarray:
+    return (await get_embeddings([text]))[0]
+
+
+async def get_embeddings(texts: list[str]):
+    headers = {'Authorization': f'Bearer {OPENAI_API_KEY}', 'Content-Type': 'application/json'}
+    data = {'input': texts, 'model': 'text-embedding-ada-002'}
+    async with aiohttp.ClientSession() as session:
+        async with session.post('https://api.openai.com/v1/embeddings', json=data, headers=headers) as response:
+            response_json = await response.json()
+    embeddings = [np.array(e['embedding']) for e in response_json['data']]
+    return embeddings
 
 
 def find_closest(crs: cursor, user_id: str, embedding) -> SimilarPages:

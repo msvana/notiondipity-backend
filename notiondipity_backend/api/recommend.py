@@ -14,7 +14,7 @@ async def recommend(user: dict):
     page_text: str = json['content']
     page_id: str = json.get('pageId')
     page_text = f'{page_title} {page_text}'
-    page_embedding = embeddings.get_embedding(page_text)
+    page_embedding = await embeddings.get_embedding(page_text)
     with quart.current_app.config['db'].connection() as conn, conn.cursor() as cursor:
         similar_pages = embeddings.find_closest(cursor, user['user_id_hash'], page_embedding)
         if page_id:
