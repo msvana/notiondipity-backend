@@ -54,7 +54,6 @@ def authenticate(func):
         try:
             user_info = jwt.decode(auth_token, JWT_SECRET, algorithms=['HS256'])
             user_info['user_id_hash'] = sha256(user_info['user_id'].encode()).hexdigest()
-            print(user_info)
             return await func(*args, **kwargs, user=user_info)
         except jwt.DecodeError:
             return 'Invalid authentication token', 401

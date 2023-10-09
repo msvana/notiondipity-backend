@@ -21,6 +21,7 @@ quart = "^0.19.2"
 quart-cors = "^0.7.0"
 hypercorn = "^0.14.4"
 aiohttp = "^3.8.5"
+mixpanel = "^4.10.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.3.2"
