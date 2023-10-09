@@ -118,6 +118,7 @@ def find_closest(crs: cursor, user_id: str, embedding) -> SimilarPages:
     for page_embedding_record in page_embeddings_records:
         distance = np.dot(embedding, page_embedding_record.embedding) \
                    / (np.linalg.norm(embedding) * np.linalg.norm(page_embedding_record.embedding))
+        distance += np.random.uniform(-0.05, 0.05)
         pages_with_distances.append((page_embedding_record, distance))
     pages_sorted = sorted(pages_with_distances, key=lambda x: x[1], reverse=True)
     return pages_sorted
