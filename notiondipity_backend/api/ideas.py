@@ -22,5 +22,7 @@ async def ideas(user):
         if page_id:
             similar_pages = [p for p in similar_pages if page_id.replace('-', '') not in p[0].page_url]
             similar_pages = embeddings.penalize_relatives(cursor, user['user_id_hash'], page_id, similar_pages)
-    idea_suggestions = await gpt.get_ideas([page_text] + [p[0].get_text(user['user_id']) for p in similar_pages[:2]])
+    pages_for_comparison = [(p[0].page_title, p[0].get_text(user['user_id'])) for p in similar_pages[:2]]
+    pages_for_comparison.append((page_title, page_text))
+    idea_suggestions = await gpt.get_ideas(pages_for_comparison)
     return {'status': 'OK', 'ideas': idea_suggestions}

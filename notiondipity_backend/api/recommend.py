@@ -36,7 +36,7 @@ async def compare(user: dict):
     with quart.current_app.config['db'].connection() as conn, conn.cursor() as cursor:
         second_page = embeddings.get_embedding_record(cursor, user['user_id_hash'], second_page_id)
         if second_page:
-            comparison = await gpt.compare_pages([
+            comparison, _ = await gpt.compare_pages([
                 (page_title, page_text),
                 (second_page.page_title, second_page.get_text(user['user_id']))
             ])

@@ -9,10 +9,10 @@ from notiondipity_backend.config import OPENAI_API_KEY
 
 async def get_ideas(pages: list[str]) -> list[dict]:
     prompt = '''
-        Generate a list of project idea suggestions from the following Notion pages and then process them 
+        Generate a list of project idea suggestions from the provided Notion pages and then process them 
         for further use. Business ideas should be preferred, but other project ideas are welcome too. 
-        Utilize non-obvious hidden connections between different pages. Add a short description for each idea.
-        Be careful not to use the " symbol when writing description.'''
+        Utilize extracted similarities, differences, combinations and non-obvious connections between pages. 
+        Add a short description for each idea. Be careful not to use the " symbol when writing description.'''
 
     function_definition = {
         'name': 'process_project_ideas',
@@ -41,13 +41,21 @@ async def get_ideas(pages: list[str]) -> list[dict]:
         }
     }
 
-    messages = await compare_pages(pages)
-    messages.append({'role': 'user', 'content': prompt})
+    comparison, comparison_prompt = await compare_pages(pages)
+    if comparison is None:
+        return []
+
+    messages = [
+        {'role': 'user', 'content': comparison_prompt},
+        {'role': 'assistant', 'content': _comparison_to_string(comparison)},
+        {'role': 'user', 'content': prompt}
+    ]
+
     headers = {'Authorization': f'Bearer {OPENAI_API_KEY}', 'Content-Type': 'application/json'}
     data = {
         'messages': messages,
         'model': 'gpt-3.5-turbo-16k',
-        'temperature': 0.25,
+        'temperature': 0.2,
         'functions': [function_definition],
         'function_call': {'name': 'process_project_ideas'}
     }
@@ -97,7 +105,7 @@ async def compare_pages(pages: list[tuple[str, str]]) -> dict | None:
         }
     }
 
-    for _, page in enumerate(pages):
+    for page in pages:
         title, text = page
         prompt.append(f'------\nPAGE "{title}":\n------\n{text}\n')
         prompt.append('------ END OF PAGE ------')
@@ -119,14 +127,20 @@ async def compare_pages(pages: list[tuple[str, str]]) -> dict | None:
     async with aiohttp.ClientSession() as session:
         async with session.post('https://api.openai.com/v1/chat/completions', json=data, headers=headers) as response:
             completion = await response.json()
-    
+
     response = completion['choices'][0]['message']
 
     if 'function_call' in response:
         try:
-            return json.loads(response['function_call']['arguments'])
+            return json.loads(response['function_call']['arguments']), prompt
         except json.decoder.JSONDecodeError:
             logging.error(f"Could not decode string: {response['function_call']['arguments']}")
-            return None
+            return None, prompt
     else:
-        return None
+        return None, prompt
+
+
+def _comparison_to_string(comparison):
+    return 'Similarities:\n' + '\n'.join(f'- {s}' for s in comparison['similarities']) \
+        + 'Differences:\n' + '\n'.join(f'- {d}' for d in comparison['differences']) \
+        + 'Combinations:\n' + '\n'.join(f'- {c}' for c in comparison['combinations'])
