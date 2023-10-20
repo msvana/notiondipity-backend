@@ -65,7 +65,7 @@ async def first_update(cursor, page_infos: list[tuple], user_id_hash: str, user_
         for j in range(len(chunk)):
             page_embedding_record = embeddings.PageEmbeddingRecord(
                 chunk[j][0], user_id_hash, chunk[j][3], chunk[j][2], page_embeddings[j].tobytes(),
-                chunk[j][4], datetime.now(), chunk[j][1])
+                chunk[j][4], datetime.now(), parent_id=chunk[j][1])
             page_embedding_record.add_text(user_id, chunk[j][2])
             embeddings.add_embedding_record(cursor, page_embedding_record)
         i += 10
@@ -82,8 +82,8 @@ async def full_update(page_infos: list[tuple], user_id_hash, user_id, access_tok
             for j in range(len(chunk)):
                 page_embedding_record = embeddings.PageEmbeddingRecord(
                     chunk[j][0], user_id_hash, chunk[j][3], chunk[j][2], page_embeddings[j].tobytes(),
-                    chunk[j][4], datetime.now(), chunk[j][1])
-                page_embedding_record.add_text(user_id, chunk[j][2])
+                    chunk[j][4], datetime.now(), parent_id=chunk[j][1])
+                page_embedding_record.add_text(user_id, page_texts[j])
                 embeddings.delete_embedding_record(cursor, user_id_hash, page_embedding_record.page_id)
                 embeddings.add_embedding_record(cursor, page_embedding_record)
             conn.commit()

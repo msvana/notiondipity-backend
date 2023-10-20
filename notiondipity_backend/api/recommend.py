@@ -17,6 +17,7 @@ async def recommend(user: dict):
     page_embedding = await embeddings.get_embedding(page_text)
     with quart.current_app.config['db'].connection() as conn, conn.cursor() as cursor:
         similar_pages = embeddings.find_closest(cursor, user['user_id_hash'], page_embedding)
+        print([p[0].get_text(user['user_id']) for p in similar_pages[:7]])
         if page_id:
             similar_pages = [p for p in similar_pages if page_id.replace('-', '') not in p[0].page_url]
             similar_pages = embeddings.penalize_relatives(cursor, user['user_id_hash'], page_id, similar_pages)
@@ -30,10 +31,10 @@ async def compare(user: dict):
     json = await quart.request.get_json()
     page_title: str = json['title']
     page_text: str = json['content']
-    second_page_id: str = json['second_page_id']
+    second_page_id: str = json['secondPageId']
     
     with quart.current_app.config['db'].connection() as conn, conn.cursor() as cursor:
-        second_page = embeddings.get_embedding_record(cursor, user['user_id'], second_page_id)
+        second_page = embeddings.get_embedding_record(cursor, user['user_id_hash'], second_page_id)
         if second_page:
             comparison = await gpt.compare_pages([
                 (page_title, page_text),
