@@ -5,7 +5,7 @@ from typing import Optional
 
 import jwt
 import psycopg
-import psycopg_pool
+from Crypto.Cipher import ChaCha20
 from quart import request
 
 from notiondipity_backend.config import JWT_SECRET
@@ -28,19 +28,6 @@ class PostgresConnectionProvider:
             return None
 
 
-def create_postgres_connection_pool() -> Optional[psycopg_pool.ConnectionPool]:
-    try:
-        conninfo = f"host={os.environ.get('PG_HOST')} " \
-                   f"port={os.environ.get('PG_PORT')} " \
-                   f"user={os.environ.get('PG_USER')} " \
-                   f"password={os.environ.get('PG_PASSWORD')} " \
-                   f"dbname={os.environ.get('PG_DB', 'postgres')} "
-        pool = psycopg_pool.ConnectionPool(conninfo)
-    except psycopg.OperationalError:
-        return None
-    return pool
-
-
 def authenticate(func):
     @wraps(func)
     async def wrapper(*args, **kwargs):
@@ -59,3 +46,16 @@ def authenticate(func):
             return 'Invalid authentication token', 401
 
     return wrapper
+
+
+def encrypt_text_with_user_id(text: str, user_id: str) -> tuple[bytes, bytes]:
+    key = sha256(user_id[::-1].encode()).digest()
+    cipher = ChaCha20.new(key=key)
+    text_encrypted = cipher.encrypt(text.encode())
+    return text_encrypted, cipher.nonce
+
+
+def decrypt_text_with_user_id(text_encrypted: bytes, nonce: bytes, user_id: str) -> str:
+    key = sha256(user_id[::-1].encode()).digest()
+    cipher = ChaCha20.new(key=key, nonce=nonce)
+    return cipher.decrypt(text_encrypted).decode()
