@@ -1,5 +1,4 @@
 from base import aiotest, client, db, TEST_TOKEN
-
 assert client, db
 
 

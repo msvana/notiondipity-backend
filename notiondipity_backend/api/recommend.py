@@ -1,4 +1,5 @@
 import quart
+import uuid
 
 from notiondipity_backend.resources import embeddings, gpt
 from notiondipity_backend.utils import authenticate
@@ -17,9 +18,9 @@ async def recommend(user: dict):
     page_embedding = await embeddings.get_embedding(page_text)
     with quart.current_app.config['db'].connection() as conn, conn.cursor() as cursor:
         similar_pages = embeddings.find_closest(cursor, user['user_id_hash'], page_embedding)
-        print([p[0].get_text(user['user_id']) for p in similar_pages[:7]])
         if page_id:
-            similar_pages = [p for p in similar_pages if page_id.replace('-', '') not in p[0].page_url]
+            page_id_uuid = uuid.UUID(page_id)
+            similar_pages = [p for p in similar_pages if page_id_uuid != p[0].page_id]
             similar_pages = embeddings.penalize_relatives(cursor, user['user_id_hash'], page_id, similar_pages)
         similar_pages = [(p[0].page_url, p[0].page_title, p[1]) for p in similar_pages[:7]]
     return {'status': 'OK', 'recommendations': similar_pages}
@@ -42,6 +43,6 @@ async def compare(user: dict):
             ])
             comparison = comparison if comparison else {}
         else:
-            comparison = {}
+            return {'status': 'NOT_FOUND'}, 404
     
     return comparison

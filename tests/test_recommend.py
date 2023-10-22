@@ -7,8 +7,8 @@ assert client, db
 async def test_recommend(client):
     page_contents = {
         'title': 'Ideas',
-        'content': 'Sentiment analysis on social media',
-        'pageId': 'f4067fc5-80d2-496c-a306-8e8c6f53329a'
+        'content': 'Sentiment analysis on social media is a difficult problem',
+        'pageId': 'a80b1e5a5c8f440da67047680b2f82ce'
     }
 
     response = await client.post('/v2/recommend/', headers=TEST_HEADERS, json=page_contents)
@@ -16,8 +16,11 @@ async def test_recommend(client):
     json = await response.get_json()
     assert 'recommendations' in json
     assert json['status'] == 'OK'
-    assert len(json['recommendations']) == 2
-    assert type(json['recommendations'][0]) == list
+
+    # Page with matching ID is ignored so only 4 out of 5 test pages are returned
+    assert len(json['recommendations']) == 4
+
+    assert type(json['recommendations'][0]) is list
     assert len(json['recommendations'][0]) == 3
 
 
@@ -33,8 +36,10 @@ async def test_recommend_no_page_id(client):
     json = await response.get_json()
     assert 'recommendations' in json
     assert json['status'] == 'OK'
-    assert len(json['recommendations']) == 3
-    assert type(json['recommendations'][0]) == list
+
+    # There is no matching page ID in the request, so all 5 test pages are returned
+    assert len(json['recommendations']) == 5
+    assert type(json['recommendations'][0]) is list
     assert len(json['recommendations'][0]) == 3
 
 
@@ -63,10 +68,9 @@ async def test_compare(client):
             history and geography. If the prince indulges in pleasures instead of improving his military skills, 
             then he is quite sure to lose his princedom.
         ''',
-        'second_page_id': 'a534013e-93ec-4a18-8ebc-963fa90559d2'
+        'secondPageId': 'ebc5adb46616447f883646215ccd62da'
     }
     response = await client.post('/compare/', headers=TEST_HEADERS, json=request_data)
     assert response.status_code == 200
     json = await response.get_json()
     print(json)
-
