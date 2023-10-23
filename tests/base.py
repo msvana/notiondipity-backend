@@ -9,6 +9,7 @@ from pytest import fixture
 
 from main import app
 from notiondipity_backend.resources import embeddings
+from notiondipity_backend.utils import PostgresConnectionProvider
 
 TEST_TOKEN = os.environ.get('TEST_TOKEN')
 TEST_USER_ID_HASH = '22d195198acb6e3e9e88d3c88c7980aaeed170615269153719cbd16de455c921'
@@ -35,8 +36,8 @@ def db():
                f"password=LpMTwZtmGa2U4rR " \
                f"dbname=notiondipity_autotest"
 
-    pool = psycopg_pool.ConnectionPool(conninfo)
-    with pool.connection() as conn:
+    connection_provider = PostgresConnectionProvider(conninfo)
+    with connection_provider.connection() as conn:
         cursor = conn.cursor()
         with open('sql/drop_tables.sql') as drop_tables_script:
             cursor.execute(drop_tables_script.read())
@@ -44,7 +45,7 @@ def db():
             cursor.execute(create_tables_script.read())
         asyncio.run(insert_test_data(cursor))
         conn.commit()
-    return pool
+    return connection_provider
 
 
 @fixture

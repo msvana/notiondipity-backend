@@ -1,7 +1,9 @@
-import quart
 import uuid
+from dataclasses import asdict
+import quart
 
-from notiondipity_backend.resources import embeddings, gpt
+from notiondipity_backend.resources import embeddings
+from notiondipity_backend.services import comparison
 from notiondipity_backend.utils import authenticate
 
 recommend_api = quart.Blueprint('recommend_api', __name__)
@@ -32,17 +34,16 @@ async def compare(user: dict):
     json = await quart.request.get_json()
     page_title: str = json['title']
     page_text: str = json['content']
+    page_id: str = json['pageId']
     second_page_id: str = json['secondPageId']
-    
+
     with quart.current_app.config['db'].connection() as conn, conn.cursor() as cursor:
+        current_page_embedding = (await embeddings.get_embedding(f'{page_title}\n{page_text}')).tobytes()
+        current_page = embeddings.PageEmbeddingRecord(
+            page_id, user['user_id_hash'], '', page_title, current_page_embedding, None, None)
         second_page = embeddings.get_embedding_record(cursor, user['user_id_hash'], second_page_id)
         if second_page:
-            comparison, _ = await gpt.compare_pages([
-                (page_title, page_text),
-                (second_page.page_title, second_page.get_text(user['user_id']))
-            ])
-            comparison = comparison if comparison else {}
-        else:
-            return {'status': 'NOT_FOUND'}, 404
-    
-    return comparison
+            comp = await comparison.compare_pages(cursor, user['user_id'], [current_page, second_page])
+            if comp:
+                return {'status': 'OK', 'comparison': asdict(comp)}
+        return {'status': 'NOT_FOUND'}, 404

@@ -7,22 +7,28 @@ import jwt
 import psycopg
 from Crypto.Cipher import ChaCha20
 from quart import request
-
+from pgvector.psycopg import register_vector
 from notiondipity_backend.config import JWT_SECRET
 
 
 class PostgresConnectionProvider:
 
-    def __init__(self):
-        self.conninfo = f"host={os.environ.get('PG_HOST')} " \
-                        f"port={os.environ.get('PG_PORT')} " \
-                        f"user={os.environ.get('PG_USER')} " \
-                        f"password={os.environ.get('PG_PASSWORD')} " \
-                        f"dbname={os.environ.get('PG_DB', 'postgres')} "
+    def __init__(self, conninfo=None):
+        if conninfo:
+            self.conninfo = conninfo
+        else:
+            self.conninfo = f"host={os.environ.get('PG_HOST')} " \
+                            f"port={os.environ.get('PG_PORT')} " \
+                            f"user={os.environ.get('PG_USER')} " \
+                            f"password={os.environ.get('PG_PASSWORD')} " \
+                            f"dbname={os.environ.get('PG_DB', 'postgres')} "
 
     def connection(self) -> Optional[psycopg.Connection]:
         try:
-            return psycopg.connect(self.conninfo)
+            conn = psycopg.connect(self.conninfo)
+            conn.execute('CREATE EXTENSION IF NOT EXISTS vector')
+            register_vector(conn)
+            return conn
         except psycopg.OperationalError as e:
             print(e)
             return None
