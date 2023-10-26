@@ -41,6 +41,7 @@ async def compare(user: dict):
         current_page_embedding = (await embeddings.get_embedding(f'{page_title}\n{page_text}')).tobytes()
         current_page = embeddings.PageEmbeddingRecord(
             page_id, user['user_id_hash'], '', page_title, current_page_embedding, None, None)
+        current_page.add_text(user['user_id'], page_text)
         second_page = embeddings.get_embedding_record(cursor, user['user_id_hash'], second_page_id)
         if second_page:
             comp = await comparison.compare_pages(cursor, user['user_id'], [current_page, second_page])
