@@ -1,56 +1,60 @@
-create table
-  embeddings (
-    page_id uuid not null,
-    user_id varchar(64) not null,
-    page_url varchar not null,
-    page_title varchar,
-    embedding bytea not null,
-    page_last_updated timestamp,
-    embedding_last_updated timestamp,
-    text_nonce bytea,
-    text_encrypted bytea,
-    parent_id uuid
-  );
+CREATE TABLE
+    embeddings (
+    page_id UUID NOT NULL,
+    user_id VARCHAR(64) NOT NULL,
+    page_url VARCHAR NOT NULL,
+    page_title VARCHAR,
+    embedding BYTEA NOT NULL,
+    page_last_updated TIMESTAMP,
+    embedding_last_updated TIMESTAMP,
+    text_nonce BYTEA,
+    text_encrypted BYTEA,
+    parent_id UUID
+);
 
-alter table embeddings add constraint embeddings_pk primary key (page_id, user_id);
+ALTER TABLE embeddings
+    ADD CONSTRAINT embeddings_pk PRIMARY KEY (page_id, user_id);
 
-create table
-  last_updates (
-    user_id varchar(64) not null primary key,
-    last_update timestamp not null,
-    finished smallint
-  );
+CREATE TABLE
+    last_updates (
+    user_id VARCHAR(64) NOT NULL PRIMARY KEY,
+    last_update TIMESTAMP NOT NULL,
+    finished SMALLINT
+);
 
-create table
-  comparisons (
-    comparison_id varchar(32) not null constraint comparisons_pk primary key,
-    time_updated timestamp not null,
-    comparison_nonce bytea not null,
-    comparison_encrypted bytea not null
-  );
+CREATE TABLE
+    comparisons (
+    comparison_id VARCHAR(32) NOT NULL
+        CONSTRAINT comparisons_pk PRIMARY KEY,
+    time_updated TIMESTAMP NOT NULL,
+    comparison_nonce BYTEA NOT NULL,
+    comparison_encrypted BYTEA NOT NULL
+);
 
-create table
-  comparison_embeddings (
-    comparison_id varchar(32) not null constraint comparison_embeddings_comparisons_comparison_id_fk references public.comparisons,
-    page_id varchar not null,
-    embedding vector (1536),
-    constraint comparison_embeddings_pk primary key (comparison_id, page_id)
-  );
+CREATE TABLE
+    comparison_embeddings (
+    comparison_id VARCHAR(32) NOT NULL
+        CONSTRAINT comparison_embeddings_comparisons_comparison_id_fk REFERENCES public.comparisons,
+    page_id VARCHAR NOT NULL,
+    embedding VECTOR(1536),
+    CONSTRAINT comparison_embeddings_pk PRIMARY KEY (comparison_id, page_id)
+);
 
-create table
-  ideas (
-    idea_id varchar(32) not null constraint ideas_pk primary key,
-    time_updated timestamp not null,
-    title_nonce bytea not null,
-    title_encrypted bytea not null,
-    description_nonce bytea not null,
-    description_encrypted bytea not null
-  );
+CREATE TABLE ideas (
+    idea_id SERIAL
+        CONSTRAINT ideas_pk PRIMARY KEY,
+    cache_id VARCHAR(32) NOT NULL,
+    time_updated TIMESTAMP NOT NULL,
+    title_nonce BYTEA NOT NULL,
+    title_encrypted BYTEA NOT NULL,
+    description_nonce BYTEA NOT NULL,
+    description_encrypted BYTEA NOT NULL
+);
 
-create table
-  idea_embeddings (
-    idea_id varchar(32) not null constraint comparison_embeddings_comparisons_comparison_id_fk references public.comparisons,
-    page_id varchar not null,
-    embedding vector (1536),
-    constraint idea_embeddings_pk primary key (idea_id, page_id)
-  );
+CREATE TABLE idea_embeddings (
+    cache_id VARCHAR(32) NOT NULL,
+    page_id VARCHAR NOT NULL,
+    embedding VECTOR NOT NULL,
+    CONSTRAINT idea_embeddings_pk
+        PRIMARY KEY (cache_id, page_id)
+);

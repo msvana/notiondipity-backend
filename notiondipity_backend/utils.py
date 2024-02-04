@@ -1,5 +1,5 @@
 from functools import wraps
-from hashlib import sha256
+from hashlib import md5, sha256
 import os
 from typing import Optional
 
@@ -66,3 +66,10 @@ def decrypt_text_with_user_id(text_encrypted: bytes, nonce: bytes, user_id: str)
     key = sha256(user_id[::-1].encode()).digest()
     cipher = ChaCha20.new(key=key, nonce=nonce)
     return cipher.decrypt(text_encrypted).decode()
+
+
+def cache_id_from_page_ids(page_ids: list[str]) -> str:
+    page_ids_clean = map(lambda p: str(p).replace('-', ''), page_ids)
+    page_ids_set = set(page_ids_clean)
+    cache_id = md5(str(page_ids_set).encode()).hexdigest()
+    return cache_id

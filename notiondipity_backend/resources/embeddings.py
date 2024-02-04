@@ -31,6 +31,10 @@ class PageEmbeddingRecord:
     def embedding(self) -> np.ndarray:
         return np.frombuffer(self.embedding_bytes)  # type: ignore
 
+    @property
+    def clean_page_id(self) -> str:
+        return str(self.page_id).replace('-', '')
+
     def should_update(self, page_last_updated: datetime) -> bool:
         return page_last_updated > self.embedding_last_updated or self.text_encrypted is None or self.parent_id is None
 

@@ -3,11 +3,10 @@ import os
 from datetime import datetime, timedelta
 from functools import wraps
 
-import psycopg_pool
 from psycopg.cursor import Cursor
 from pytest import fixture
 
-from main import app
+from notiondipity_backend.app import app
 from notiondipity_backend.resources import embeddings
 from notiondipity_backend.utils import PostgresConnectionProvider
 

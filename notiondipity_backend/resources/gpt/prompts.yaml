@@ -1,0 +1,63 @@
+ideas:
+  prompt: | 
+    Generate a list of project idea suggestions from the provided Notion pages and then process them 
+    for further use. Business ideas should be preferred, but other project ideas are welcome too.
+    
+    Utilize extracted similarities, differences, combinations and non-obvious connections between pages,
+    ass well as the exploration of adjacent possible. Add a short description for each idea. Be careful
+    not to use the \" symbol when writing description.
+  function:
+    name: process_project_ideas
+    description: Processes generated project ideas for further use
+    parameters:
+      type: object
+      properties:
+        ideas:
+          type: array
+          description: List of generated project ideas
+          items:
+            type: object
+            properties:
+              title:
+                type: string
+                description: Short title for the project idea
+              description:
+                type: string
+                description: Description of the project idea in 2 to 3 sentences
+
+adjacent_possible:
+  prompt: |
+    Adjacent possible refers to the idea that innovation and creativity are not sudden breakthroughs but are 
+    built upon existing ideas and conditions. It suggests that new ideas and possibilities emerge from the space 
+    that is adjacent or connected to what already exists. The adjacent possible is like a network of possibilities
+    that expand as existing elements combine and recombine in novel ways. Each innovation or breakthrough opens up
+    new adjacent possibilities for further exploration and development.
+
+    What are the adjacent possibilities of these pages? What are the ideas that are adjacent to the ideas
+    in these pages? What are the ideas that are connected to the ideas in these pages? Be creative and innovative.
+
+comparisons:
+  prompt: |
+    Compare the contents of these notion pages. What are the similarities in the ideas. How do they differ?
+    Can ideas from different pages be somehow combined? Save this comparison in the database.
+  function:
+    name: save_comparison
+    description: Save a page comparison in the database
+    parameters:
+      type: object
+      properties:
+        similarities:
+          type: array
+          description: List of similarities between pages
+          items:
+            type': string
+        differences: 
+          type: array
+          description: List of differences between pages
+          items:
+            type: string
+        combinations:
+          type: array
+          description: List of ways how the ideas from the pages can be combined
+          items:
+            type: string

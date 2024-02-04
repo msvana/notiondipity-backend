@@ -1,15 +1,13 @@
 [tool.poetry]
-name = "notion-backend"
+name = "notiondipity_backend"
 version = "0.6.0"
 description = ""
 authors = ["Milos Svana <milos.svana@gmail.com>"]
 readme = "README.md"
-packages = [{ include = "notiondipity_backend" }]
 
 [tool.poetry.dependencies]
 python = "~3.11"
 requests = "^2.28.2"
-openai = "~0.28"
 numpy = "^1.24.2"
 gunicorn = { extras = ["gevent"], version = "^21.2.0" }
 pyjwt = "^2.7.0"
@@ -23,9 +21,12 @@ hypercorn = "^0.14.4"
 aiohttp = "^3.8.5"
 mixpanel = "^4.10.0"
 pgvector = "^0.2.3"
+openai = "^1.10.0"
+pyyaml = "^6.0.1"
 
 [tool.poetry.group.dev.dependencies]
-pytest = "^7.3.2"
+autopep8 = "^2.0.4"
+pytest = "^8.0.0"
 
 [build-system]
 requires = ["poetry-core"]
