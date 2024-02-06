@@ -36,7 +36,7 @@ class IdeaCache:
     def __init__(self, cursor: Cursor):
         self._cursor = cursor
 
-    def cache_idea(self, cached_idea: CachedIdea, page_embeddings: list[PageEmbeddingRecord]):
+    def cache_idea(self, cached_idea: CachedIdea):
         self._cursor.execute('''
             INSERT INTO ideas (
                 cache_id, 

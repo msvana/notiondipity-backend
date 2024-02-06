@@ -31,12 +31,12 @@ class IdeaService:
             cached_idea = CachedIdea(cache_id=cache_id)
             cached_idea.set_title(idea_new.title, user_id)
             cached_idea.set_description(idea_new.description, user_id)
-            self._idea_cache.cache_idea(cached_idea, pages)
+            self._idea_cache.cache_idea(cached_idea)
 
         self._idea_cache.cache_embeddings(cache_id, pages)
-
         return ideas
 
     @staticmethod
     def _cached_idea_to_idea(cached_idea: CachedIdea, user_id: str) -> Idea:
-        return Idea(cached_idea.get_title(user_id), cached_idea.get_description(user_id), True)
+        idea =  Idea(cached_idea.get_title(user_id), cached_idea.get_description(user_id), True)
+        return idea

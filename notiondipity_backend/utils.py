@@ -69,7 +69,7 @@ def decrypt_text_with_user_id(text_encrypted: bytes, nonce: bytes, user_id: str)
 
 
 def cache_id_from_page_ids(page_ids: list[str]) -> str:
-    page_ids_clean = map(lambda p: str(p).replace('-', ''), page_ids)
-    page_ids_set = set(page_ids_clean)
-    cache_id = md5(str(page_ids_set).encode()).hexdigest()
+    page_ids_clean = sorted([str(p).replace('-', '') for p in page_ids])
+    page_ids_string = " ".join(page_ids_clean)
+    cache_id = md5(page_ids_string.encode()).hexdigest()
     return cache_id

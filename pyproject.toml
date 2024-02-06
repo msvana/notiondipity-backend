@@ -13,7 +13,7 @@ gunicorn = { extras = ["gevent"], version = "^21.2.0" }
 pyjwt = "^2.7.0"
 pycryptodome = "^3.18.0"
 tiktoken = "^0.5.0"
-psycopg = { extras = ["pool"], version = "^3.1.10" }
+psycopg = {extras = ["binary", "pool"], version = "^3.1.18"}
 gevent = "^23.9.1"
 quart = "^0.19.2"
 quart-cors = "^0.7.0"
