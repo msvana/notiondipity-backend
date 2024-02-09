@@ -1,29 +1,14 @@
 import json
-from dataclasses import dataclass
 
 from openai import AsyncOpenAI
 
-from notiondipity_backend.resources.gpt import utils
-
-
-@dataclass
-class Comparison:
-    similarities: list[str]
-    differences: list[str]
-    combinations: list[str]
-    secondPageTitle: str | None = None
-    cached: bool = False
-
-    def __str__(self):
-        return 'Similarities:\n' + '\n'.join(f'- {s}' for s in self.similarities) \
-            + 'Differences:\n' + '\n'.join(f'- {d}' for d in self.differences) \
-            + 'Combinations:\n' + '\n'.join(f'- {c}' for c in self.combinations)
+from notiondipity_backend.resources.gpt.utils import load_prompt
+from notiondipity_backend.services.comparisons.comparison import Comparison
 
 
 async def compare_pages(openai_client: AsyncOpenAI, pages: list[tuple[str, str]]) \
         -> tuple[Comparison | None, str]:
-    prompt_base = utils.load_prompt('comparisons')
-    prompt = prompt_base.append_pages(pages)
+    prompt = get_comparison_prompt(pages)
 
     if not prompt.function:
         raise ValueError('Prompt `comparison` not found')
@@ -44,3 +29,9 @@ async def compare_pages(openai_client: AsyncOpenAI, pages: list[tuple[str, str]]
         return Comparison(**parsed_comparison), prompt.prompt
     else:
         return None, prompt.prompt
+
+
+def get_comparison_prompt(pages: list[tuple[str, str]]) -> str:
+    prompt_base = load_prompt('comparisons')
+    prompt = prompt_base.append_pages(pages)
+    return prompt

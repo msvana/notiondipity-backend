@@ -3,7 +3,8 @@ from dataclasses import asdict
 import quart
 
 from notiondipity_backend.resources import embeddings
-from notiondipity_backend.services import comparison
+from notiondipity_backend.services import comparisons
+from openai import AsyncOpenAI
 from notiondipity_backend.utils import authenticate
 
 recommend_api = quart.Blueprint('recommend_api', __name__)
@@ -44,7 +45,8 @@ async def compare(user: dict):
         current_page.add_text(user['user_id'], page_text)
         second_page = embeddings.get_embedding_record(cursor, user['user_id_hash'], second_page_id)
         if second_page:
-            comp = await comparison.compare_pages(cursor, user['user_id'], [current_page, second_page])
+            comparison_service = comparisons.ComparisonService(AsyncOpenAI(), cursor)
+            comp = await comparison_service.get_comparisons([current_page, second_page], user['user_id'])
             if comp:
                 return {'status': 'OK', 'comparison': asdict(comp)}
         return {'status': 'NOT_FOUND'}, 404

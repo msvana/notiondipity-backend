@@ -2,13 +2,20 @@ import json
 
 from openai import AsyncOpenAI
 
-from notiondipity_backend.resources.gpt import comparisons, utils
-from notiondipity_backend.services.ideas.idea import Idea
+from notiondipity_backend.resources.embeddings import PageEmbeddingRecord
+from notiondipity_backend.resources.gpt import utils
+from notiondipity_backend.services.comparisons import ComparisonService
+
+from .idea import Idea
 
 
-async def get_ideas(openai_client: AsyncOpenAI, pages: list[tuple[str, str]]) -> list[Idea]:
-    comparison, comparison_prompt = await comparisons.compare_pages(openai_client, pages)
-    adjacent_possible, adjacent_possible_prompt = await _get_adjacent_possible(openai_client, pages)
+async def get_ideas(openai_client: AsyncOpenAI, comparison_service: ComparisonService,
+                    pages: PageEmbeddingRecord, user_id: str) -> list[Idea]:
+    comparison = await comparison_service.get_comparisons(pages, user_id)
+    comparison_prompt = comparison_service.get_comparison_prompt(pages, user_id)
+
+    page_data = [(p.page_title, p.get_text(user_id)) for p in pages]
+    adjacent_possible, adjacent_possible_prompt = await _get_adjacent_possible(openai_client, page_data)
 
     if comparison is None or adjacent_possible is None:
         return []
@@ -18,7 +25,7 @@ async def get_ideas(openai_client: AsyncOpenAI, pages: list[tuple[str, str]]) ->
         raise ValueError('Prompt `ideas` was not found')
 
     messages = [
-        {'role': 'user', 'content': comparison_prompt},
+        {'role': 'user', 'content': comparison_prompt.prompt},
         {'role': 'assistant', 'content': str(comparison)},
         {'role': 'user', 'content': adjacent_possible_prompt},
         {'role': 'assistant', 'content': adjacent_possible},
