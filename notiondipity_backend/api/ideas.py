@@ -1,5 +1,6 @@
 import quart
 from openai import AsyncOpenAI
+from dataclasses import asdict
 
 from notiondipity_backend.resources import embeddings
 from notiondipity_backend.services.ideas import IdeaService
@@ -38,4 +39,11 @@ async def ideas(user):
         similar_pages.insert(0, (current_page_embedding, 1.0))
         cached_ideas_service = IdeaService(cursor, AsyncOpenAI())
         idea_suggestions = await cached_ideas_service.get_ideas(user['user_id'], [p[0] for p in similar_pages[:3]])
-    return {'status': 'OK', 'ideas': idea_suggestions}
+
+        # Older versions of the extensions expect a `desc` field
+        idea_suggestions_formatted = []
+        for idea in idea_suggestions:
+            idea_dict = asdict(idea)
+            idea_dict['desc'] = idea.description
+            idea_suggestions_formatted.append(idea_dict)
+    return {'status': 'OK', 'ideas': idea_suggestions_formatted}
