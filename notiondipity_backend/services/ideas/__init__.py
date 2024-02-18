@@ -24,6 +24,10 @@ class IdeaService:
             cached_ideas = self._idea_cache.get_cached_ideas(page_ids)
             return [self._cached_idea_to_idea(ci, user_id) for ci in cached_ideas]
 
+        return await self.regenerate_and_store_ideas(user_id, pages)
+
+    async def regenerate_and_store_ideas(self, user_id: str, pages: list[PageEmbeddingRecord]) -> list[Idea]:
+        page_ids = [p.page_id for p in pages]
         self._idea_cache.delete_cached_ideas(page_ids)
 
         ideas = await generator.get_ideas(self._openai_client, self._compoarison_service, pages, user_id)
