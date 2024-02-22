@@ -17,6 +17,7 @@ class CachedIdea:
     title_encrypted: bytes | None = field(default=None)
     description_nonce: bytes | None = field(default=None)
     description_encrypted: bytes | None = field(default=None)
+    saved: bool = field(default=False)
 
     def get_title(self, user_id: str) -> str:
         return utils.decrypt_text_with_user_id(self.title_encrypted, self.title_nonce, user_id)
@@ -36,7 +37,7 @@ class IdeaCache:
     def __init__(self, cursor: Cursor):
         self._cursor = cursor
 
-    def cache_idea(self, cached_idea: CachedIdea):
+    def cache_idea(self, cached_idea: CachedIdea) -> int:
         self._cursor.execute('''
             INSERT INTO ideas (
                 cache_id, 
@@ -52,8 +53,13 @@ class IdeaCache:
                 %(title_encrypted)s,
                 %(description_nonce)s,
                 %(description_encrypted)s
-            )
+            ) RETURNING idea_id
             ''', asdict(cached_idea))
+        result = self._cursor.fetchone()
+        if not result:
+            raise ValueError('Failed to insert idea')
+        idea_id = result[0]
+        return idea_id
 
     def cache_embeddings(self, cache_id: str, page_embeddings: list[PageEmbeddingRecord]):
         for page_embedding in page_embeddings:
@@ -78,7 +84,24 @@ class IdeaCache:
                 return False
         return True
 
+    def get_owner_hash(self, idea_id: int) -> str:
+        self._cursor.execute('''
+            SELECT e.user_id
+            FROM ideas i
+            JOIN idea_embeddings ie ON i.cache_id = ie.cache_id
+            JOIN embeddings e ON e.page_id = e.page_id
+            WHERE i.idea_id = %s
+            ''', (idea_id,))
+        result = self._cursor.fetchone()
+        if not result:
+            raise ValueError(f'No record found for idea with ID {idea_id}')
+        user_hash = result[0]
+        return user_hash
+
+    def save_idea(self, idea_id: int):
+        self._cursor.execute('UPDATE ideas SET saved = TRUE WHERE idea_id = %s', (idea_id,))
+
     def delete_cached_ideas(self, page_ids: list[str]):
         cache_id = utils.cache_id_from_page_ids(page_ids)
         self._cursor.execute('DELETE FROM idea_embeddings WHERE cache_id = %s', (cache_id,))
-        self._cursor.execute('DELETE FROM ideas WHERE cache_id = %s', (cache_id,))
+        self._cursor.execute('DELETE FROM ideas WHERE cache_id = %s AND NOT saved', (cache_id,))

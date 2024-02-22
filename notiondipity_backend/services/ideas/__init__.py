@@ -37,12 +37,20 @@ class IdeaService:
             cached_idea = CachedIdea(cache_id=cache_id)
             cached_idea.set_title(idea_new.title, user_id)
             cached_idea.set_description(idea_new.description, user_id)
-            self._idea_cache.cache_idea(cached_idea)
+            idea_new.idea_id = self._idea_cache.cache_idea(cached_idea)
 
         self._idea_cache.cache_embeddings(cache_id, pages)
         return ideas
 
+    def save_idea(self, user_hash: str, idea_id: int):
+        is_owner = self._idea_cache.get_owner_hash(idea_id) == user_hash
+        if not is_owner:
+            raise ValueError('User does not own the idea')
+        self._idea_cache.save_idea(idea_id)
+
     @staticmethod
     def _cached_idea_to_idea(cached_idea: CachedIdea, user_id: str) -> Idea:
-        idea = Idea(cached_idea.get_title(user_id), cached_idea.get_description(user_id), True)
+        if cached_idea.idea_id is None:
+            raise ValueError('Cached idea does not have an idea_id')
+        idea = Idea(cached_idea.get_title(user_id), cached_idea.get_description(user_id), True, cached_idea.idea_id)
         return idea

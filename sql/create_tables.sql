@@ -48,7 +48,8 @@ CREATE TABLE ideas (
     title_nonce BYTEA NOT NULL,
     title_encrypted BYTEA NOT NULL,
     description_nonce BYTEA NOT NULL,
-    description_encrypted BYTEA NOT NULL
+    description_encrypted BYTEA NOT NULL,
+    saved BOOLEAN
 );
 
 CREATE TABLE idea_embeddings (

@@ -10,7 +10,7 @@ from .idea import Idea
 
 
 async def get_ideas(openai_client: AsyncOpenAI, comparison_service: ComparisonService,
-                    pages: PageEmbeddingRecord, user_id: str) -> list[Idea]:
+                    pages: list[PageEmbeddingRecord], user_id: str) -> list[Idea]:
     comparison = await comparison_service.get_comparisons(pages, user_id)
     comparison_prompt = comparison_service.get_comparison_prompt(pages, user_id)
 

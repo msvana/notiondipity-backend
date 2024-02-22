@@ -54,3 +54,16 @@ async def ideas(user):
             idea_dict['desc'] = idea.description
             idea_suggestions_formatted.append(idea_dict)
     return {'status': 'OK', 'ideas': idea_suggestions_formatted}
+
+
+@ideas_api.route('/ideas/save/<idea_id>', methods=['GET'])
+@authenticate
+async def save_idea(user, idea_id: int):
+    with quart.current_app.config['db'].connection() as conn, conn.cursor() as cursor:
+        ideas_service = IdeaService(cursor, AsyncOpenAI())
+        try:
+            ideas_service.save_idea(user['user_id_hash'], idea_id)
+        except ValueError as e:
+            print(e)
+            return {'status': 'ERROR', 'message': str(e)}
+    return {'status': 'OK'}
