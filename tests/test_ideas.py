@@ -4,7 +4,7 @@ assert client, db
 
 
 @aiotest
-async def test_ideas(client):
+async def test_ideas_base(client):
     page_contents = {
         'title': 'Ideas',
         'content': 'Sentiment analysis on social media',
@@ -20,6 +20,7 @@ async def test_ideas(client):
         assert 'title' in idea
         assert 'description' in idea
         assert idea['cached'] is False
+        assert idea['saved'] is False
 
     # Now the ideas should be cached
     response = await client.post('/ideas/', headers=TEST_HEADERS, json=page_contents)
@@ -131,3 +132,4 @@ async def test_ideas_saved(client):
     assert 'idea_id' in idea and idea['idea_id'] is not None
     assert 'title' in idea
     assert 'description' in idea
+    assert idea['saved'] is True

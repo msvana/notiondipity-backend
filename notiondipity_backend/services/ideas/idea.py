@@ -5,5 +5,6 @@ from dataclasses import dataclass, field
 class Idea:
     title: str
     description: str
+    idea_id: int | None = field(default=None)
     cached: bool = field(default=False)
-    idea_id: int | None = None
+    saved: bool = field(default=False)

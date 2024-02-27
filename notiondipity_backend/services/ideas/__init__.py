@@ -56,5 +56,6 @@ class IdeaService:
     def _cached_idea_to_idea(cached_idea: CachedIdea, user_id: str) -> Idea:
         if cached_idea.idea_id is None:
             raise ValueError('Cached idea does not have an idea_id')
-        idea = Idea(cached_idea.get_title(user_id), cached_idea.get_description(user_id), True, cached_idea.idea_id)
+        idea = Idea(cached_idea.get_title(user_id), cached_idea.get_description(
+            user_id), cached_idea.idea_id, True, cached_idea.saved)
         return idea
