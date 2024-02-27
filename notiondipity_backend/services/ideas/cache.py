@@ -68,7 +68,17 @@ class IdeaCache:
 
     def get_cached_ideas(self, page_ids: list[str]) -> list[CachedIdea]:
         cache_id = utils.cache_id_from_page_ids(page_ids)
-        self._cursor.execute('SELECT * FROM ideas WHERE cache_id = %s', (cache_id,))
+        self._cursor.execute("""
+            SELECT 
+                cache_id, 
+                time_updated, 
+                idea_id, 
+                title_nonce, 
+                title_encrypted, 
+                description_nonce, 
+                description_encrypted, 
+                saved 
+            FROM ideas WHERE cache_id = %s""", (cache_id,))
         return [CachedIdea(*result) for result in self._cursor.fetchall()]
 
     def is_cache_record_valid(self, page_embeddings: list[PageEmbeddingRecord]) -> bool:
