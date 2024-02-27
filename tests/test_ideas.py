@@ -108,3 +108,26 @@ async def test_ideas_save(client, db):
         cursor.execute("SELECT saved FROM ideas WHERE idea_id = %s", (idea_id,))
         result = cursor.fetchone()
         assert result[0] is True
+
+
+@aiotest
+async def test_ideas_saved(client):
+    page_contents = {
+        'title': 'Cvicenie',
+        'content': 'Sentiment analysis on social media',
+        'pageId': '3e47e9f4-c534-4d74-96c9-790b36b1162e',
+    }
+
+    response = await client.post('/ideas/', headers=TEST_HEADERS, json=page_contents)
+    json = await response.get_json()
+    idea_id = json['ideas'][0]['idea_id']
+    await client.get(f'/ideas/save/{idea_id}', headers=TEST_HEADERS)
+
+    response = await client.get('/ideas/saved/', headers=TEST_HEADERS)
+    json = await response.get_json()
+    assert json['status'] == 'OK'
+    assert len(json['ideas']) == 1
+    idea = json['ideas'][0]
+    assert 'idea_id' in idea and idea['idea_id'] is not None
+    assert 'title' in idea
+    assert 'description' in idea

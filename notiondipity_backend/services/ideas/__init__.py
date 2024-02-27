@@ -48,6 +48,10 @@ class IdeaService:
             raise ValueError('User does not own the idea')
         self._idea_cache.save_idea(idea_id)
 
+    def get_saved_ideas(self, user_hash: str, user_id: str) -> list[Idea]:
+        cached_ideas = self._idea_cache.get_saved_ideas(user_hash)
+        return [self._cached_idea_to_idea(ci, user_id) for ci in cached_ideas]
+
     @staticmethod
     def _cached_idea_to_idea(cached_idea: CachedIdea, user_id: str) -> Idea:
         if cached_idea.idea_id is None:

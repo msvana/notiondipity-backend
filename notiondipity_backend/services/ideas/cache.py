@@ -111,6 +111,24 @@ class IdeaCache:
     def save_idea(self, idea_id: int):
         self._cursor.execute('UPDATE ideas SET saved = TRUE WHERE idea_id = %s', (idea_id,))
 
+    def get_saved_ideas(self, user_hash: str):
+        self._cursor.execute('''
+            SELECT DISTINCT ON (i.idea_id)
+                i.cache_id, 
+                i.time_updated, 
+                i.idea_id, 
+                i.title_nonce, 
+                i.title_encrypted, 
+                i.description_nonce, 
+                i.description_encrypted, 
+                i.saved 
+            FROM ideas i
+            JOIN idea_embeddings ie ON i.cache_id = ie.cache_id
+            JOIN embeddings e ON e.page_id = e.page_id
+            WHERE e.user_id = %s AND saved = TRUE
+            ''', (user_hash,))
+        return [CachedIdea(*result) for result in self._cursor.fetchall()]
+
     def delete_cached_ideas(self, page_ids: list[str]):
         cache_id = utils.cache_id_from_page_ids(page_ids)
         self._cursor.execute('DELETE FROM idea_embeddings WHERE cache_id = %s', (cache_id,))
