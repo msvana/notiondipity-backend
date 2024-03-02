@@ -1,7 +1,8 @@
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
 
-from psycopg.cursor import Cursor
+from psycopg.connection import Connection
+from psycopg.rows import class_row
 
 from notiondipity_backend import utils
 from notiondipity_backend.config import CACHE_VALID_DISTANCE_THRESHOLD
@@ -19,13 +20,17 @@ class CachedIdea:
     description_encrypted: bytes | None = field(default=None)
     saved: bool = field(default=False)
 
-    def get_title(self, user_id: str) -> str:
+    def get_title(self, user_id: str) -> str | None:
+        if not self.title_encrypted or not self.title_nonce:
+            return None
         return utils.decrypt_text_with_user_id(self.title_encrypted, self.title_nonce, user_id)
 
     def set_title(self, title: str, user_id: str):
         self.title_encrypted, self.title_nonce = utils.encrypt_text_with_user_id(title, user_id)
 
-    def get_description(self, user_id: str) -> str:
+    def get_description(self, user_id: str) -> str | None:
+        if not self.description_encrypted or not self.description_nonce:
+            return None
         return utils.decrypt_text_with_user_id(self.description_encrypted, self.description_nonce, user_id)
 
     def set_description(self, description: str, user_id: str):
@@ -34,102 +39,96 @@ class CachedIdea:
 
 class IdeaCache:
 
-    def __init__(self, cursor: Cursor):
-        self._cursor = cursor
+    def __init__(self, connection: Connection):
+        self._connection = connection
 
     def cache_idea(self, cached_idea: CachedIdea) -> int:
-        self._cursor.execute('''
-            INSERT INTO ideas (
-                cache_id, 
-                time_updated, 
-                title_nonce, 
-                title_encrypted, 
-                description_nonce, 
-                description_encrypted
-            ) VALUES (
-                %(cache_id)s, 
-                %(time_updated)s, 
-                %(title_nonce)s, 
-                %(title_encrypted)s,
-                %(description_nonce)s,
-                %(description_encrypted)s
-            ) RETURNING idea_id
-            ''', asdict(cached_idea))
-        result = self._cursor.fetchone()
+        with self._connection.cursor() as cursor:
+            cursor.execute('''
+                INSERT INTO ideas (
+                    cache_id, 
+                    time_updated, 
+                    title_nonce, 
+                    title_encrypted, 
+                    description_nonce, 
+                    description_encrypted
+                ) VALUES (
+                    %(cache_id)s, 
+                    %(time_updated)s, 
+                    %(title_nonce)s, 
+                    %(title_encrypted)s,
+                    %(description_nonce)s,
+                    %(description_encrypted)s
+                ) RETURNING idea_id
+                ''', asdict(cached_idea))
+            result = cursor.fetchone()
         if not result:
             raise ValueError('Failed to insert idea')
         idea_id = result[0]
         return idea_id
 
     def cache_embeddings(self, cache_id: str, page_embeddings: list[PageEmbeddingRecord]):
-        for page_embedding in page_embeddings:
-            params = (cache_id, page_embedding.clean_page_id, page_embedding.embedding)
-            self._cursor.execute('INSERT INTO idea_embeddings VALUES(%s, %s, %s)', params)
+        with self._connection.cursor() as cursor:
+            for page_embedding in page_embeddings:
+                params = (cache_id, page_embedding.clean_page_id, page_embedding.embedding)
+                cursor.execute('INSERT INTO idea_embeddings VALUES(%s, %s, %s)', params)
 
     def get_cached_ideas(self, page_ids: list[str]) -> list[CachedIdea]:
         cache_id = utils.cache_id_from_page_ids(page_ids)
-        self._cursor.execute("""
-            SELECT 
-                cache_id, 
-                time_updated, 
-                idea_id, 
-                title_nonce, 
-                title_encrypted, 
-                description_nonce, 
-                description_encrypted, 
-                saved 
-            FROM ideas WHERE cache_id = %s""", (cache_id,))
-        return [CachedIdea(*result) for result in self._cursor.fetchall()]
+        with self._connection.cursor(row_factory=class_row(CachedIdea)) as cursor:
+            cursor.execute('SELECT * FROM ideas WHERE cache_id = %s', (cache_id,))
+            return list(cursor.fetchall())
 
     def is_cache_record_valid(self, page_embeddings: list[PageEmbeddingRecord]) -> bool:
         cache_id = utils.cache_id_from_page_ids([p.page_id for p in page_embeddings])
         for page_embedding in page_embeddings:
             params = (page_embedding.embedding, cache_id, page_embedding.clean_page_id)
-            self._cursor.execute('''
-                SELECT (embedding <=> %s) AS similarity 
-                FROM idea_embeddings WHERE cache_id = %s AND page_id = %s
-                ''', params)
-            record = self._cursor.fetchone()
+            with self._connection.cursor() as cursor:
+                cursor.execute('''
+                    SELECT (embedding <=> %s) AS similarity 
+                    FROM idea_embeddings WHERE cache_id = %s AND page_id = %s
+                    ''', params)
+                record = cursor.fetchone()
             if not record or record[0] >= CACHE_VALID_DISTANCE_THRESHOLD:
                 return False
         return True
 
     def get_owner_hash(self, idea_id: int) -> str:
-        self._cursor.execute('''
-            SELECT e.user_id
-            FROM ideas i
-            JOIN idea_embeddings ie ON i.cache_id = ie.cache_id
-            JOIN embeddings e ON e.page_id = e.page_id
-            WHERE i.idea_id = %s
-            ''', (idea_id,))
-        result = self._cursor.fetchone()
+        with self._connection.cursor() as cursor:
+            cursor.execute('''
+                SELECT e.user_id
+                FROM ideas i
+                JOIN idea_embeddings ie ON i.cache_id = ie.cache_id
+                JOIN embeddings e ON e.page_id = e.page_id
+                WHERE i.idea_id = %s
+                ''', (idea_id,))
+            result = cursor.fetchone()
         if not result:
             raise ValueError(f'No record found for idea with ID {idea_id}')
         user_hash = result[0]
         return user_hash
 
     def save_idea(self, idea_id: int):
-        self._cursor.execute('UPDATE ideas SET saved = TRUE WHERE idea_id = %s', (idea_id,))
+        with self._connection.cursor() as cursor:
+            cursor.execute('UPDATE ideas SET saved = TRUE WHERE idea_id = %s', (idea_id,))
+
+    def unsave_idea(self, idea_id: int):
+        with self._connection.cursor() as cursor:
+            cursor.execute('UPDATE ideas SET saved = FALSE WHERE idea_id = %s', (idea_id,))
 
     def get_saved_ideas(self, user_hash: str):
-        self._cursor.execute('''
-            SELECT DISTINCT ON (i.idea_id)
-                i.cache_id, 
-                i.time_updated, 
-                i.idea_id, 
-                i.title_nonce, 
-                i.title_encrypted, 
-                i.description_nonce, 
-                i.description_encrypted, 
-                i.saved 
-            FROM ideas i
-            JOIN idea_embeddings ie ON i.cache_id = ie.cache_id
-            JOIN embeddings e ON e.page_id = e.page_id
-            WHERE e.user_id = %s AND saved = TRUE
-            ''', (user_hash,))
-        return [CachedIdea(*result) for result in self._cursor.fetchall()]
+        with self._connection.cursor(row_factory=class_row(CachedIdea)) as cursor:
+            cursor.execute('''
+                SELECT DISTINCT ON (i.idea_id) i.*
+                FROM ideas i
+                JOIN idea_embeddings ie ON i.cache_id = ie.cache_id
+                JOIN embeddings e ON e.page_id = e.page_id
+                WHERE e.user_id = %s AND saved = TRUE
+                ''', (user_hash,))
+            return list(cursor.fetchall())
 
     def delete_cached_ideas(self, page_ids: list[str]):
         cache_id = utils.cache_id_from_page_ids(page_ids)
-        self._cursor.execute('DELETE FROM idea_embeddings WHERE cache_id = %s', (cache_id,))
-        self._cursor.execute('DELETE FROM ideas WHERE cache_id = %s AND NOT saved', (cache_id,))
+        with self._connection.cursor() as cursor:
+            cursor.execute('DELETE FROM idea_embeddings WHERE cache_id = %s', (cache_id,))
+            cursor.execute('DELETE FROM ideas WHERE cache_id = %s AND NOT saved', (cache_id,))

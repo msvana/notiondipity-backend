@@ -2,7 +2,7 @@ from datetime import datetime
 import json
 
 from openai import AsyncOpenAI
-from psycopg.cursor import Cursor
+from psycopg.connection import Connection
 
 from notiondipity_backend.resources.embeddings import PageEmbeddingRecord
 from notiondipity_backend.utils import cache_id_from_page_ids
@@ -14,9 +14,9 @@ from . import generator
 
 class ComparisonService:
 
-    def __init__(self, openai_client: AsyncOpenAI, cursor: Cursor):
+    def __init__(self, openai_client: AsyncOpenAI, connection: Connection):
         self._openai_client = openai_client
-        self._comparison_cache = ComparisonCache(cursor)
+        self._comparison_cache = ComparisonCache(connection)
 
     async def get_comparisons(self, pages: list[PageEmbeddingRecord], user_id: str) -> Comparison | None:
         page_ids = [p.page_id for p in pages]

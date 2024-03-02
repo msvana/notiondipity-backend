@@ -45,7 +45,7 @@ async def compare(user: dict):
         current_page.add_text(user['user_id'], page_text)
         second_page = embeddings.get_embedding_record(cursor, user['user_id_hash'], second_page_id)
         if second_page:
-            comparison_service = comparisons.ComparisonService(AsyncOpenAI(), cursor)
+            comparison_service = comparisons.ComparisonService(AsyncOpenAI(), conn)
             comp = await comparison_service.get_comparisons([current_page, second_page], user['user_id'])
             if comp:
                 return {'status': 'OK', 'comparison': asdict(comp)}

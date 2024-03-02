@@ -39,7 +39,7 @@ async def ideas(user):
         current_page_embedding.add_text(user['user_id'], page_text)
 
         similar_pages.insert(0, (current_page_embedding, 1.0))
-        ideas_service = IdeaService(cursor, AsyncOpenAI())
+        ideas_service = IdeaService(conn, AsyncOpenAI())
 
         if refresh:
             idea_suggestions = await ideas_service.regenerate_and_store_ideas(
@@ -59,8 +59,8 @@ async def ideas(user):
 @ideas_api.route('/ideas/saved/', methods=['GET'])
 @authenticate
 async def saved_ideas(user):
-    with quart.current_app.config['db'].connection() as conn, conn.cursor() as cursor:
-        ideas_service = IdeaService(cursor, AsyncOpenAI())
+    with quart.current_app.config['db'].connection() as conn:
+        ideas_service = IdeaService(conn, AsyncOpenAI())
         saved_ideas = ideas_service.get_saved_ideas(user['user_id_hash'], user['user_id'])
     return {'status': 'OK', 'ideas': saved_ideas}
 
@@ -68,10 +68,23 @@ async def saved_ideas(user):
 @ideas_api.route('/ideas/save/<idea_id>', methods=['GET'])
 @authenticate
 async def save_idea(user, idea_id: int):
-    with quart.current_app.config['db'].connection() as conn, conn.cursor() as cursor:
-        ideas_service = IdeaService(cursor, AsyncOpenAI())
+    with quart.current_app.config['db'].connection() as conn:
+        ideas_service = IdeaService(conn, AsyncOpenAI())
         try:
             ideas_service.save_idea(user['user_id_hash'], idea_id)
+        except ValueError as e:
+            print(e)
+            return {'status': 'ERROR', 'message': str(e)}
+    return {'status': 'OK'}
+
+
+@ideas_api.route('/ideas/unsave/<idea_id>', methods=['GET'])
+@authenticate
+async def unsave_idea(user, idea_id: int):
+    with quart.current_app.config['db'].connection() as conn:
+        ideas_service = IdeaService(conn, AsyncOpenAI())
+        try:
+            ideas_service.unsave_idea(user['user_id_hash'], idea_id)
         except ValueError as e:
             print(e)
             return {'status': 'ERROR', 'message': str(e)}

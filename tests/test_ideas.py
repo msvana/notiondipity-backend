@@ -91,14 +91,7 @@ async def test_ideas_refresh(client):
 
 @aiotest
 async def test_ideas_save(client, db):
-    page_contents = {
-        'title': 'Cvicenie',
-        'content': 'Sentiment analysis on social media',
-        'pageId': '3e47e9f4-c534-4d74-96c9-790b36b1162e',
-    }
-
-    response = await client.post('/ideas/', headers=TEST_HEADERS, json=page_contents)
-    json = await response.get_json()
+    json = await _create_example_ideas(client)
     idea_id = json['ideas'][0]['idea_id']
     response = await client.get(f'/ideas/save/{idea_id}', headers=TEST_HEADERS)
     assert response.status_code == 200
@@ -113,14 +106,7 @@ async def test_ideas_save(client, db):
 
 @aiotest
 async def test_ideas_saved(client):
-    page_contents = {
-        'title': 'Cvicenie',
-        'content': 'Sentiment analysis on social media',
-        'pageId': '3e47e9f4-c534-4d74-96c9-790b36b1162e',
-    }
-
-    response = await client.post('/ideas/', headers=TEST_HEADERS, json=page_contents)
-    json = await response.get_json()
+    json = await _create_example_ideas(client)
     idea_id = json['ideas'][0]['idea_id']
     await client.get(f'/ideas/save/{idea_id}', headers=TEST_HEADERS)
 
@@ -133,3 +119,31 @@ async def test_ideas_saved(client):
     assert 'title' in idea
     assert 'description' in idea
     assert idea['saved'] is True
+
+
+@aiotest
+async def test_ideas_unsave(client):
+    ideas = await _create_example_ideas(client)
+    idea_id = ideas['ideas'][0]['idea_id']
+    await client.get(f'/ideas/save/{idea_id}', headers=TEST_HEADERS)
+
+    response = await client.get(f'/ideas/unsave/{idea_id}', headers=TEST_HEADERS)
+    json = await response.get_json()
+    assert response.status_code == 200
+    assert json['status'] == 'OK'
+
+    response_saved = await client.get('/ideas/saved/', headers=TEST_HEADERS)
+    json_saved = await response_saved.get_json()
+    assert len(json_saved['ideas']) == 0
+
+
+async def _create_example_ideas(client) -> dict:
+    page_contents = {
+        'title': 'Cvicenie',
+        'content': 'Sentiment analysis on social media',
+        'pageId': '3e47e9f4-c534-4d74-96c9-790b36b1162e',
+    }
+
+    response = await client.post('/ideas/', headers=TEST_HEADERS, json=page_contents)
+    json = await response.get_json()
+    return json
