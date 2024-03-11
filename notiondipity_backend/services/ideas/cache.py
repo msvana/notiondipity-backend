@@ -99,7 +99,7 @@ class IdeaCache:
                 SELECT e.user_id
                 FROM ideas i
                 JOIN idea_embeddings ie ON i.cache_id = ie.cache_id
-                JOIN embeddings e ON e.page_id = e.page_id
+                JOIN embeddings e ON e.page_id = CAST(ie.page_id AS UUID)
                 WHERE i.idea_id = %s
                 ''', (idea_id,))
             result = cursor.fetchone()
@@ -122,7 +122,7 @@ class IdeaCache:
                 SELECT DISTINCT ON (i.idea_id) i.*
                 FROM ideas i
                 JOIN idea_embeddings ie ON i.cache_id = ie.cache_id
-                JOIN embeddings e ON e.page_id = e.page_id
+                JOIN embeddings e ON e.page_id = CAST(ie.page_id AS UUID)
                 WHERE e.user_id = %s AND saved = TRUE
                 ''', (user_hash,))
             return list(cursor.fetchall())
